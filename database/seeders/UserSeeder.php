@@ -76,7 +76,7 @@ class UserSeeder extends Seeder
                 'roles' => ['Reviewer']
             ],
             // Engineers
-            [
+           [
                 'first_name' => 'لانا', 'last_name' => 'المعمارية', 'email' => 'lana.a@app.com', 'username' => 'lana.architect',
                 'password' => Hash::make('password'), 'gender' => 'female', 'address' => 'مكتب التصميم، المدينة',
                 'nationality' => 'مصرية', 'phone_number' => '00201112223334', 'profile_details' => 'مهندسة معمارية ذات رؤية إبداعية.',
@@ -105,6 +105,19 @@ class UserSeeder extends Seeder
                 'password' => Hash::make('password'), 'gender' => 'male', 'address' => 'قسم الميكانيك، المدينة',
                 'nationality' => 'إماراتي', 'phone_number' => '00971501234567', 'profile_details' => 'مهندس ميكانيكي لأنظمة التبريد.',
                 'roles' => ['Mechanical Engineer']
+            ],
+            // Service Proposer Users
+            [
+                'first_name' => 'فؤاد', 'last_name' => 'الخدمات', 'email' => 'fouad.s@app.com', 'username' => 'fouad.service',
+                'password' => Hash::make('password'), 'gender' => 'male', 'address' => 'حي الخدمات، المدينة',
+                'nationality' => 'سعودي', 'phone_number' => '00966591122334', 'profile_details' => 'مستخدم فعال يطلب ويقترح الخدمات.',
+                'roles' => ['Service Proposer'] // <== تعيين الدور
+            ],
+            [
+                'first_name' => 'هناء', 'last_name' => 'الطلبات', 'email' => 'hana.r@app.com', 'username' => 'hana.request',
+                'password' => Hash::make('password'), 'gender' => 'female', 'address' => 'منطقة الأحياء السكنية',
+                'nationality' => 'إماراتي', 'phone_number' => '00971561122334', 'profile_details' => 'مستخدم دائم لخدمات الشركة.',
+                'roles' => ['Service Proposer'] // <== تعيين الدور
             ],
         ];
 

@@ -14,72 +14,40 @@ class NewServiceProposalSeeder extends Seeder
      */
     public function run(): void
     {
-        $admin = User::where('username', 'admin.sys')->first();
-        $fahadManager = User::where('username', 'fahad.manager')->first();
+        $fouad = User::where('username', 'fouad.service')->first(); // <== جلب المستخدم الجديد
+        $hana = User::where('username', 'hana.request')->first();     // <== جلب المستخدم الجديد
         $alyaReviewer = User::where('username', 'alya.reviewer')->first();
-        $lanaArchitect = User::where('username', 'lana.architect')->first();
 
-        if (!$admin || !$fahadManager || !$alyaReviewer || !$lanaArchitect) {
+        if (!$fouad || !$hana || !$alyaReviewer) {
             $this->command->error('Some proposer or reviewer users not found for NewServiceProposalSeeder! Please run UserSeeder first.');
             return;
         }
 
         $proposalsData = [
-            // Proposal 1: From Admin
+            // اقتراحات من Fouad (Service Proposer)
             [
-                'proposed_service_name' => 'خدمة إدارة المرافق',
-                'service_details' => 'إدارة شاملة للمرافق بعد البناء (صيانة، نظافة، أمن).',
-                'user_id' => $admin->id,
-                'proposal_date' => Carbon::parse('2024-03-01'),
-                'status' => 'تمت الموافقة',
-                'reviewer_user_id' => $alyaReviewer->id,
-                'review_comments' => 'خدمة ضرورية وتوسعية، ينصح بالتنفيذ.',
-            ],
-            // Proposal 2: From Manager
-            [
-                'proposed_service_name' => 'خدمة التقييم العقاري',
-                'service_details' => 'تقديم خدمات تقييم عقاري احترافية للممتلكات.',
-                'user_id' => $fahadManager->id,
-                'proposal_date' => Carbon::parse('2024-04-10'),
-                'status' => 'قيد المراجعة',
-                'reviewer_user_id' => null, // لم تتم مراجعتها بعد
-                'review_comments' => null,
-            ],
-            // Proposal 3: From Architect
-            [
-                'proposed_service_name' => 'ورش عمل تصميم معماري',
-                'service_details' => 'تنظيم ورش عمل ودورات تدريبية في التصميم المعماري للطلاب والمهندسين الجدد.',
-                'user_id' => $lanaArchitect->id,
-                'proposal_date' => Carbon::parse('2024-05-01'),
-                'status' => 'مرفوض',
-                'reviewer_user_id' => $alyaReviewer->id,
-                'review_comments' => 'فكرة جيدة لكنها خارج نطاق تركيز الشركة الحالي.',
-            ],
-            // Proposal 4: From Admin
-            [
-                'proposed_service_name' => 'خدمة الطاقة المتجددة للمباني',
-                'service_details' => 'تصميم وتركيب أنظمة الطاقة الشمسية للمباني السكنية والتجارية.',
-                'user_id' => $admin->id,
+                'proposed_service_name' => 'خدمة تنظيف ما بعد البناء',
+                'service_details' => 'تنظيف شامل للمباني بعد الانتهاء من أعمال التشييد والتشطيبات.',
+                'user_id' => $fouad->id,
                 'proposal_date' => Carbon::parse('2024-06-01'),
                 'status' => 'قيد المراجعة',
-                'reviewer_user_id' => null,
-                'review_comments' => null,
-            ],
-            // Proposal 5: From Manager
-            [
-                'proposed_service_name' => 'خدمة الاستدامة البيئية',
-                'service_details' => 'تقديم استشارات لدمج الممارسات المستدامة في مشاريع البناء.',
-                'user_id' => $fahadManager->id,
-                'proposal_date' => Carbon::parse('2024-06-20'),
-                'status' => 'قيد المراجعة',
                 'reviewer_user_id' => $alyaReviewer->id,
-                'review_comments' => 'تحتاج لدراسة جدوى أعمق قبل الموافقة.',
+                'review_comments' => 'فكرة ممتازة، تحتاج لدراسة جدوى السوق.',
             ],
-            // Proposal 6: From Architect
             [
-                'proposed_service_name' => 'خدمة النمذجة ثلاثية الأبعاد للمباني (BIM)',
-                'service_details' => 'إنشاء نماذج معلومات البناء ثلاثية الأبعاد للمشاريع.',
-                'user_id' => $lanaArchitect->id,
+                'proposed_service_name' => 'خدمة عزل الصوت للمباني',
+                'service_details' => 'تركيب مواد عازلة للصوت في الجدران والأسقف للمباني السكنية والتجارية.',
+                'user_id' => $fouad->id,
+                'proposal_date' => Carbon::parse('2024-05-15'),
+                'status' => 'مرفوض',
+                'reviewer_user_id' => $alyaReviewer->id,
+                'review_comments' => 'الطلب لا يتوافق مع استراتيجية الشركة الحالية.',
+            ],
+            // اقتراحات من Hana (Service Proposer)
+            [
+                'proposed_service_name' => 'خدمة تصميم لاندسكيب',
+                'service_details' => 'تصميم وتنفيذ تنسيق حدائق ومساحات خضراء للمنازل والفيلات.',
+                'user_id' => $hana->id,
                 'proposal_date' => Carbon::parse('2024-07-05'),
                 'status' => 'قيد المراجعة',
                 'reviewer_user_id' => null,

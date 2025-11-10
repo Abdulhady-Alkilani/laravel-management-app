@@ -13,6 +13,7 @@ class Workshop extends Model
         'name',
         'description',
         'project_id',
+        'supervisor_user_id', // <== إضافة هذا الحقل
     ];
 
     public function project()
@@ -40,5 +41,11 @@ class Workshop extends Model
     public function reports()
     {
         return $this->hasMany(Report::class);
+    }
+
+    // <== علاقة المشرف
+    public function supervisor()
+    {
+        return $this->belongsTo(User::class, 'supervisor_user_id');
     }
 }

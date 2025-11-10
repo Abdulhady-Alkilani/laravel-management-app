@@ -30,6 +30,7 @@ class CvSeeder extends Seeder
         $structuralAnalysisSkill = Skill::where('name', 'تحليل إنشائي')->first();
         $cadSkill = Skill::where('name', 'برامج CAD')->first();
         $safetySkill = Skill::where('name', 'صحة وسلامة مهنية')->first(); // هذا هو المتغير المشتبه به
+        $projectManagementSkill = Skill::where('name', 'إدارة مشاريع البناء')->first();
 
         // ----------------------------------------------------------------------
         // DEBUGGING: إضافة رسائل تصحيح للتحقق من وجود المهارات
@@ -42,6 +43,12 @@ class CvSeeder extends Seeder
         if (!$structuralAnalysisSkill) $this->command->error('CvSeeder DEBUG: Skill "تحليل إنشائي" not found!');
         if (!$cadSkill) $this->command->error('CvSeeder DEBUG: Skill "برامج CAD" not found!');
         if (!$safetySkill) $this->command->error('CvSeeder DEBUG: Skill "صحة وسلامة مهنية" not found!');
+        if (!$lana) $this->command->error('CvSeeder DEBUG: User lana.architect not found!');
+        if (!$architecturalDesignSkill) $this->command->error('CvSeeder DEBUG: Skill "تصميم معماري" not found!');
+        if (!$cadSkill) $this->command->error('CvSeeder DEBUG: Skill "برامج CAD" not found!');
+        if (!$projectManagementSkill) $this->command->error('CvSeeder DEBUG: Skill "إدارة مشاريع البناء" not found!');
+        if (!$siteSupervisionSkill) $this->command->error('CvSeeder DEBUG: Skill "إشراف ميداني" not found!');
+
         // ----------------------------------------------------------------------
 
         // Ensure all users exist
@@ -99,21 +106,20 @@ class CvSeeder extends Seeder
              $this->command->error('CvSeeder DEBUG: Could not create CV for Yousef due to missing dependencies.');
         }
 
-        // CV for Lana (Architectural Engineer)
-        if ($lana && $architecturalDesignSkill && $cadSkill && $siteSupervisionSkill) { // إضافة فحص لوجود المهارات
+         // CV for Lana (Architectural Engineer)
+        if ($lana && $architecturalDesignSkill && $cadSkill && $projectManagementSkill) {
             $cvLana = Cv::firstOrCreate(
                 ['user_id' => $lana->id],
                 [
-                    'profile_details' => 'مهندسة معمارية مبدعة في تصميم المساحات السكنية والتجارية.',
-                    'experience' => '3 سنوات خبرة في مكتب استشارات هندسية.',
-                    'education' => 'بكالوريوس هندسة معمارية.',
+                    'profile_details' => 'مهندسة معمارية مبدعة في تصميم المساحات السكنية والتجارية، بخبرة 3 سنوات.',
+                    'experience' => '3 سنوات خبرة في مكتب استشارات هندسية، تصميم واجهات داخلية وخارجية.',
+                    'education' => 'بكالوريوس هندسة معمارية، جامعة دمشق 2021.',
                     'cv_status' => 'تمت الموافقة',
                 ]
             );
-            $cvLana->skills()->syncWithoutDetaching([$architecturalDesignSkill->id, $cadSkill->id, $siteSupervisionSkill->id]);
-        } else {
-             $this->command->error('CvSeeder DEBUG: Could not create CV for Lana due to missing dependencies.');
-        }
+            $cvLana->skills()->syncWithoutDetaching([$architecturalDesignSkill->id, $cadSkill->id, $projectManagementSkill->id, $siteSupervisionSkill->id]);
+        } else { $this->command->error('CvSeeder DEBUG: Could not create CV for Lana due to missing dependencies.'); }
+        
 
         // CV for Mazen (Civil Engineer)
         if ($mazen && $siteSupervisionSkill && $concreteWorkSkill && $safetySkill) { // إضافة فحص لوجود المهارات

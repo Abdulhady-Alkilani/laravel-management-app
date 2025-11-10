@@ -1,106 +1,57 @@
 <?php
 
-use App\Http\Controllers\CustomAuthController;
-use App\Http\Controllers\EngineerCvController;
+use App\Livewire\CustomLogin;
+use App\Livewire\CustomRegistration;
+use App\Livewire\CustomForgotPassword;
+use App\Livewire\CustomResetPassword;
+
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
-|
 */
 
-// مسارات المصادقة المخصصة (login, register, registration completion)
-// هذه المسارات يجب أن تكون متاحة للضيوف فقط
+// مسارات المصادقة المشتركة (Livewire Components)
 Route::middleware('guest')->group(function () {
-    Route::get('/register', [CustomAuthController::class, 'showRegisterForm'])->name('register');
-    Route::post('/register', [CustomAuthController::class, 'register']);
-
-    Route::get('/login', [CustomAuthController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [CustomAuthController::class, 'login']);
-
-    // صفحة إكمال التسجيل يجب أن تكون محمية بـ 'auth' لأن المستخدم يكون قد سجل الدخول بالفعل
-    // لذلك، سننقلها خارج مجموعة 'guest'
+    Route::get('/login', CustomLogin::class)->name('login');
+    Route::get('/register', CustomRegistration::class)->name('register');
+    Route::get('/forgot-password', CustomForgotPassword::class)->name('password.request');
+    Route::get('/reset-password/{token}', CustomResetPassword::class)->name('password.reset');
 });
 
-// المسار الجذري (الصفحة الأولى عند فتح التطبيق)
-// يجب أن يعيد التوجيه إلى صفحة تسجيل الدخول إذا لم يكن مسجلاً للدخول.
-// وإذا كان مسجلاً للدخول، يعيد توجيهه إلى لوحته الخاصة.
+// المسار الجذري للموقع
 Route::get('/', function () {
     if (Auth::check()) {
-        return app(CustomAuthController::class)->redirectBasedOnRole(Auth::user());
+        // إذا كان مسجلاً للدخول، توجهه إلى /admin (لوحة Filament Admin)
+        // هذا مجرد توجيه أولي، Filament سيتحقق من الأذونات ويقوم بالتوجيه الصحيح إذا كان المستخدم ليس Admin
+      //  return redirect('/admin');
     }
-    // إذا لم يكن مسجلاً للدخول، توجهه إلى صفحة تسجيل الدخول
+    // إذا لم يكن مسجلاً للدخول، توجه إلى صفحة تسجيل الدخول
     return redirect()->route('login');
-});
+})->name('home');
 
 // مسار تسجيل الخروج (للمسجلين فقط)
-Route::post('/logout', [CustomAuthController::class, 'logout'])->middleware('auth')->name('logout');
+Route::post('/logout', function (Request $request) {
+    Auth::logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+    return redirect()->route('login');
+})->middleware('auth')->name('logout');
+
 
 // ------------------------------------------------------------------
-// مسارات محمية (للمستخدمين المسجلين للدخول فقط)
+// مسارات لوحات التحكم الخاصة بكل دور (محمية بـ 'auth' middleware)
 // ------------------------------------------------------------------
+// هذه المسارات تُنشأ تلقائياً بواسطة Filament Panels
+// لا تحتاج لتعريفها هنا يدوياً إلا إذا كان لديك Pages/Resources خارج نطاق الـ Panels
+// في حالتنا، كل شيء داخل Filament، لذا هذه المجموعة يمكن أن تكون فارغة
+// أو تحتوي على مسارات خاصة مثل تحديث الملف الشخصي العام أو تقديم الـ CV لو كانت خارج Panels
 Route::middleware(['auth'])->group(function () {
-
-    // مسار إكمال التسجيل، الآن هو محمي بـ 'auth'
-    Route::get('/register/completion', [CustomAuthController::class, 'showRegistrationCompletion'])->name('registration.completion');
-
-    // مسار لتحديث الملف الشخصي للمستخدم
-    Route::post('/profile/update', [EngineerCvController::class, 'updateProfile'])->name('profile.update');
-
-    // مسارات تقديم السيرة الذاتية للمهندسين
-    Route::get('/engineer/cv/create', [EngineerCvController::class, 'create'])->name('engineer.cv.create');
-    Route::post('/engineer/cv', [EngineerCvController::class, 'store'])->name('engineer.cv.store');
-
-    // لوحة تحكم عامة افتراضية (كخيار احتياطي إذا لم يتطابق أي دور)
-    Route::get('/dashboard', function () {
-        return view('dashboards.general-dashboard');
-    })->name('dashboard');
-
-    // لوحة تحكم للمدير
-    Route::get('/manager/dashboard', function () {
-        return view('dashboards.manager-dashboard');
-    })->name('manager.dashboard');
-
-    // لوحة تحكم للعامل
-    Route::get('/worker/dashboard', function () {
-        return view('dashboards.worker-dashboard');
-    })->name('worker.dashboard');
-
-    // لوحة تحكم للمستثمر
-    Route::get('/investor/dashboard', function () {
-        return view('dashboards.investor-dashboard');
-    })->name('investor.dashboard');
-
-    // لوحة تحكم لمشرف الورشة
-    Route::get('/workshop-supervisor/dashboard', function () {
-        return view('dashboards.workshop-supervisor-dashboard');
-    })->name('workshop_supervisor.dashboard');
-
-    // لوحة تحكم للمراجع
-    Route::get('/reviewer/dashboard', function () {
-        return view('dashboards.reviewer-dashboard');
-    })->name('reviewer.dashboard');
-
-    // لوحات تحكم المهندسين
-    // هذه المسارات ستعرض لوحات التحكم الخاصة بهم، وقد تحتوي على منطق عرض نموذج CV إذا لم يكن لديهم
-    Route::get('/architectural-engineer/dashboard', function () { return view('dashboards.architectural-engineer-dashboard'); })->name('architectural_engineer.dashboard');
-    Route::get('/civil-engineer/dashboard', function () { return view('dashboards.civil-engineer-dashboard'); })->name('civil_engineer.dashboard');
-    Route::get('/structural-engineer/dashboard', function () { return view('dashboards.structural-engineer-dashboard'); })->name('structural_engineer.dashboard');
-    Route::get('/electrical-engineer/dashboard', function () { return view('dashboards.electrical-engineer-dashboard'); })->name('electrical_engineer.dashboard');
-    Route::get('/mechanical-engineer/dashboard', function () { return view('dashboards.mechanical-engineer-dashboard'); })->name('mechanical_engineer.dashboard');
-    Route::get('/geotechnical-engineer/dashboard', function () { return view('dashboards.geotechnical-engineer-dashboard'); })->name('geotechnical_engineer.dashboard');
-    Route::get('/quantity-surveyor/dashboard', function () { return view('dashboards.quantity-surveyor-dashboard'); })->name('quantity_surveyor.dashboard');
-    Route::get('/site-engineer/dashboard', function () { return view('dashboards.site-engineer-dashboard'); })->name('site_engineer.dashboard');
-    Route::get('/environmental-engineer/dashboard', function () { return view('dashboards.environmental-engineer-dashboard'); })->name('environmental_engineer.dashboard');
-    Route::get('/surveying-engineer/dashboard', function () { return view('dashboards.surveying-engineer-dashboard'); })->name('surveying_engineer.dashboard');
-
+    // مثال:
+    // Route::post('/engineer/cv', [\App\Http\Controllers\EngineerCvController::class, 'store'])->name('engineer.cv.store');
+    // Route::post('/profile/update', [\App\Http\Controllers\EngineerCvController::class, 'updateProfile'])->name('profile.update');
 });
-
-// ملاحظة: لوحة تحكم الـ Admin سيتم التوجيه إليها مباشرة عبر '/admin' (Filament)

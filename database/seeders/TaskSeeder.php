@@ -26,15 +26,17 @@ class TaskSeeder extends Seeder
         $finishingWorkshop = Workshop::where('name', 'ورشة التشطيبات الداخلية')->first();
         $joineryWorkshop = Workshop::where('name', 'ورشة أعمال النجارة')->first();
         $plumbingWorkshop = Workshop::where('name', 'ورشة أنظمة السباكة')->first();
+        $designWorkshop = Workshop::where('name', 'ورشة التصميم المعماري')->first(); // <== الورشة الجديدة
 
         $khalid = User::where('username', 'khalid.worker')->first();
         $nora = User::where('username', 'nora.tech')->first();
         $yousef = User::where('username', 'yousef.plumber')->first();
         $mazen = User::where('username', 'mazen.civil')->first(); // مهندس مدني قد يكون مسؤولاً عن مهمة
+        $lana = User::where('username', 'lana.architect')->first();
 
         // Ensure all dependencies exist
         if (!$project1 || !$project2 || !$project3 || !$project6 || !$concreteWorkshop || !$electricalWorkshop ||
-            !$finishingWorkshop || !$joineryWorkshop || !$plumbingWorkshop || !$khalid || !$nora || !$yousef || !$mazen) {
+            !$finishingWorkshop ||   !$designWorkshop || !$joineryWorkshop || !$plumbingWorkshop || !$khalid || !$nora || !$yousef || !$mazen || !$lana) {
             $this->command->error('Some dependencies for TaskSeeder not found! Please run Project, Workshop, User Seeders first.');
             return;
         }
@@ -82,6 +84,21 @@ class TaskSeeder extends Seeder
                 'progress' => 0, 'start_date' => Carbon::parse('2024-07-01'), 'end_date_planned' => Carbon::parse('2024-08-31'),
                 'assigned_to_user_id' => null, 'status' => 'لم تبدأ', 'estimated_cost' => 45000.00,
             ],
+
+
+             [
+                'project_id' => $project1->id, 'workshop_id' => $designWorkshop->id, 'description' => 'تصميم الواجهات الخارجية للمرحلة الأولى - مجمع الواحة السكني',
+                'progress' => 70, 'start_date' => Carbon::parse('2024-07-01'), 'end_date_planned' => Carbon::parse('2024-08-15'),
+                'assigned_to_user_id' => $lana->id, 'status' => 'قيد التنفيذ', 'estimated_cost' => 80000.00,
+            ],
+            // مهمة مراجعة تصميم لـ Lana
+            [
+                'project_id' => $project2->id, 'workshop_id' => $designWorkshop->id, 'description' => 'مراجعة المخططات الداخلية للطابق الخامس - برج الأفق التجاري',
+                'progress' => 100, 'start_date' => Carbon::parse('2024-06-01'), 'end_date_planned' => Carbon::parse('2024-06-30'),
+                'actual_end_date' => Carbon::parse('2024-06-28'), 'assigned_to_user_id' => $lana->id, 'status' => 'مكتملة', 'estimated_cost' => 50000.00,
+            ],
+           
+
         ];
 
         foreach ($tasksData as $taskData) {

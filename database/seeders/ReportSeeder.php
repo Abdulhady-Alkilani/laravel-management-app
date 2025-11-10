@@ -22,6 +22,8 @@ class ReportSeeder extends Seeder
         $khalidWorker = User::where('username', 'khalid.worker')->first();
         $noraTech = User::where('username', 'nora.tech')->first();
         $saeedSupervisor = User::where('username', 'saeed.supervisor')->first();
+                $lana = User::where('username', 'lana.architect')->first();
+
 
         $project1 = Project::where('name', 'مجمع الواحة السكني')->first();
         $project2 = Project::where('name', 'برج الأفق التجاري')->first();
@@ -31,10 +33,15 @@ class ReportSeeder extends Seeder
         $concreteWorkshop = Workshop::where('name', 'ورشة الهياكل الخرسانية')->first();
         $electricalWorkshop = Workshop::where('name', 'ورشة التمديدات الكهربائية')->first();
         $plumbingWorkshop = Workshop::where('name', 'ورشة أنظمة السباكة')->first();
+                $designWorkshop = Workshop::where('name', 'ورشة التصميم المعماري')->first();
+
 
         $electricalService = Service::where('name', 'خدمة صيانة كهربائية عامة')->first();
         $plumbingService = Service::where('name', 'خدمة تركيب شبكات مياه')->first();
         $constructionConsultingService = Service::where('name', 'خدمة استشارات هندسية إنشائية')->first();
+
+                $architecturalConsultingService = Service::where('name', 'خدمة استشارات هندسية إنشائية')->first(); // يمكن استخدام خدمة استشارية عامة
+
 
         // Debugging: check if dependencies are found
         if (!$admin) $this->command->error('ReportSeeder DEBUG: Admin user (admin.sys) not found!');
@@ -53,6 +60,10 @@ class ReportSeeder extends Seeder
         if (!$plumbingService) $this->command->error('ReportSeeder DEBUG: Service (خدمة تركيب شبكات مياه) not found!');
         if (!$constructionConsultingService) $this->command->error('ReportSeeder DEBUG: Service (خدمة استشارات هندسية إنشائية) not found!');
 
+         if (!$lana || !$project1 || !$project2 || !$designWorkshop || !$architecturalConsultingService) {
+            $this->command->error('ReportSeeder DEBUG: Some critical dependencies for Lana not found! Please run previous Seeders first.');
+            return;
+        }
 
         // Proceed only if all critical dependencies are met
         if ($admin && $fahadManager && $khalidWorker && $noraTech && $saeedSupervisor &&
@@ -135,6 +146,39 @@ class ReportSeeder extends Seeder
                     'report_status' => 'تمت الموافقة',
                     'created_at' => Carbon::parse('2024-06-01'),
                 ],
+
+
+[
+                'employee_id' => $lana->id,
+                'project_id' => $project1->id,
+                'workshop_id' => $designWorkshop->id,
+                'service_id' => null,
+                'report_type' => 'تقرير تقدم التصميم المعماري',
+                'report_details' => json_encode(['progress_stage' => 'انتهت المرحلة المفاهيمية', 'next_steps' => 'بدء الرسومات الأولية']),
+                'report_status' => 'تمت المراجعة',
+                'created_at' => Carbon::parse('2024-08-01'),
+            ],
+            [
+                'employee_id' => $lana->id,
+                'project_id' => $project2->id,
+                'workshop_id' => $designWorkshop->id,
+                'service_id' => null,
+                'report_type' => 'تقرير مراجعة مخططات داخلية',
+                'report_details' => json_encode(['sections_reviewed' => 'الطابق الخامس، المكاتب', 'findings' => 'ملاحظات طفيفة، تم التعديل', 'status' => 'مكتمل']),
+                'report_status' => 'تمت الموافقة',
+                'created_at' => Carbon::parse('2024-07-05'),
+            ],
+            [
+                'employee_id' => $lana->id,
+                'project_id' => null, // تقرير خدمة عامة
+                'workshop_id' => null,
+                'service_id' => $architecturalConsultingService->id,
+                'report_type' => 'ملخص استشارة تصميم',
+                'report_details' => json_encode(['client' => 'العميل X', 'topic' => 'تعديل تصميم فيلا', 'recommendations' => 'دمج حديقة داخلية']),
+                'report_status' => 'تمت المراجعة',
+                'created_at' => Carbon::parse('2024-08-10'),
+            ],
+
             ];
 
             foreach ($reportsData as $reportData) {

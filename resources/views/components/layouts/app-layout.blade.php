@@ -28,38 +28,55 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ Auth::check() ? app(\App\Http\Controllers\CustomAuthController::class)->redirectBasedOnRole(Auth::user()) : route('login') }}">الرئيسية</a>
+                        <a class="nav-link" href="{{ Auth::check() ? app(\App\Http\Controllers\CustomAuthController::class)->redirectBasedOnRole(Auth::user())->getTargetUrl() : route('login') }}">الرئيسية</a>
                     </li>
                     @auth
-                        @php
-                            $user = Auth::user();
-                            $engineerRoles = [
-                                'Architectural Engineer', 'Civil Engineer', 'Structural Engineer', 'Electrical Engineer',
-                                'Mechanical Engineer', 'Geotechnical Engineer', 'Quantity Surveyor', 'Site Engineer',
-                                'Environmental Engineer', 'Surveying Engineer'
-                            ];
-                            $isEngineer = false;
-                            foreach ($engineerRoles as $roleName) {
-                                if ($user->hasRole($roleName)) {
-                                    $isEngineer = true;
-                                    break;
-                                }
-                            }
-                        @endphp
-
-                        @if($isEngineer && !$user->cvs()->exists())
+                        {{-- روابط التنقل الخاصة بكل دور (حسب الطلب في المخطط) --}}
+                        @if(Auth::user()->hasRole('Manager'))
                         <li class="nav-item">
-                            <a class="nav-link text-warning fw-bold" href="{{ route('engineer.cv.create') }}">تقديم السيرة الذاتية <i class="bi bi-exclamation-triangle-fill"></i></a>
+                            <a class="nav-link" href="{{ route('project_manager.dashboard') }}">إدارة المشاريع</a>
                         </li>
                         @endif
-
-                        {{-- يمكنك إضافة المزيد من روابط التنقل هنا --}}
-                        @if($user->hasRole('Manager'))
+                        @if(Auth::user()->hasRole('Workshop Supervisor'))
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('manager.dashboard') }}">إدارة المشاريع</a>
+                            <a class="nav-link" href="{{ route('workshop_manager.dashboard') }}">إدارة الورشة</a>
                         </li>
                         @endif
-                        {{-- ... روابط لأدوار أخرى ... --}}
+                        @if(Auth::user()->hasRole('Worker'))
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('worker.dashboard') }}">مهامي</a>
+                        </li>
+                        @endif
+                        @if(Auth::user()->hasRole('Investor'))
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('investor.dashboard') }}">مشاريعي</a>
+                        </li>
+                        @endif
+                        @if(Auth::user()->hasRole('Reviewer'))
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('reviewer.dashboard') }}">مراجعاتي</a>
+                        </li>
+                        @endif
+                        @if(Auth::user()->hasRole('Architectural Engineer') ||
+                            Auth::user()->hasRole('Civil Engineer') ||
+                            Auth::user()->hasRole('Structural Engineer') ||
+                            Auth::user()->hasRole('Electrical Engineer') ||
+                            Auth::user()->hasRole('Mechanical Engineer') ||
+                            Auth::user()->hasRole('Geotechnical Engineer') ||
+                            Auth::user()->hasRole('Quantity Surveyor') ||
+                            Auth::user()->hasRole('Site Engineer') ||
+                            Auth::user()->hasRole('Environmental Engineer') ||
+                            Auth::user()->hasRole('Surveying Engineer')
+                        )
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('engineer.dashboard') }}">لوحة المهندس</a>
+                        </li>
+                        @endif
+                        @if(Auth::user()->hasRole('Service Proposer/Requester') || (!Auth::user()->hasRole('Admin') && !Auth::user()->hasRole('Manager') && !Auth::user()->hasRole('Worker') && !Auth::user()->hasRole('Investor') && !Auth::user()->hasRole('Workshop Supervisor') && !Auth::user()->hasRole('Reviewer') && !(Auth::user()->hasRole('Architectural Engineer') || Auth::user()->hasRole('Civil Engineer') || Auth::user()->hasRole('Structural Engineer') || Auth::user()->hasRole('Electrical Engineer') || Auth::user()->hasRole('Mechanical Engineer') || Auth::user()->hasRole('Geotechnical Engineer') || Auth::user()->hasRole('Quantity Surveyor') || Auth::user()->hasRole('Site Engineer') || Auth::user()->hasRole('Environmental Engineer') || Auth::user()->hasRole('Surveying Engineer'))))
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('service_proposer.dashboard') }}">الخدمات</a>
+                            </li>
+                        @endif
                     @endauth
                 </ul>
                 <ul class="navbar-nav">
@@ -69,7 +86,6 @@
                                 {{ Auth::user()->first_name }} {{ Auth::user()->last_name }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                                {{-- <a class="dropdown-item" href="#">الملف الشخصي</a> --}}
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <form method="POST" action="{{ route('logout') }}">
@@ -110,7 +126,6 @@
         @endif
         {{ $slot }}
     </main>
-    <!-- تضمين Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

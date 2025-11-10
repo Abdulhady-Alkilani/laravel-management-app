@@ -79,12 +79,35 @@ class User extends Authenticatable implements FilamentUser
 
         // إذا كان لديك لوحات Filament إضافية، يمكنك تعريفها هنا
         // مثال:
-        // if ($panel->getId() === 'manager') {
-        //     return $this->hasRole('Manager');
-        // }
-        // if ($panel->getId() === 'worker') {
-        //     return $this->hasRole('Worker');
-        // }
+         if ($panel->getId() === 'manager') {
+             return $this->hasRole('Manager');
+         }
+
+         if ($panel->getId() === 'workshop_supervisor') return $this->hasRole('Workshop Supervisor'); // <== إضافة هذا الشرط
+         if ($panel->getId() === 'investor') return $this->hasRole('Investor'); // <== إضافة هذا الشرط
+         if ($panel->getId() === 'reviewer') return $this->hasRole('Reviewer'); // <== إضافة هذا الشرط
+         if ($panel->getId() === 'worker') return $this->hasRole('Worker'); // <== إضافة هذا الشرط
+
+
+        if ($panel->getId() === 'engineer') { // <== منطق لوحة المهندس الموحدة
+        $engineerRoles = [
+            'Architectural Engineer', 'Civil Engineer', 'Structural Engineer', 'Electrical Engineer',
+            'Mechanical Engineer', 'Geotechnical Engineer', 'Quantity Surveyor', 'Site Engineer',
+            'Environmental Engineer', 'Surveying Engineer'
+        ];
+        foreach ($engineerRoles as $roleName) {
+            if ($this->hasRole($roleName)) return true;
+        }
+        return false;
+    }
+
+
+         if ($panel->getId() === 'service_proposer') {
+        // إذا كان هناك دور 'Service Proposer' محدد:
+        // return $this->hasRole('Service Proposer');
+        // أو، إذا كان أي مستخدم ليس له دور إداري/متخصص يمكن أن يكون مقدم خدمة:
+        return !$this->hasRole('Admin') && !$this->hasRole('Manager') && !$this->hasRole('Workshop Supervisor') && !$this->hasRole('Reviewer');
+    }   
 
         return false;
     }

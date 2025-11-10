@@ -29,6 +29,7 @@ class RoleSeeder extends Seeder
             'Site Engineer',
             'Environmental Engineer',
             'Surveying Engineer',
+            'Service Proposer', // <== تأكد من وجود هذا الدور
         ];
 
         foreach ($roles as $roleName) {
