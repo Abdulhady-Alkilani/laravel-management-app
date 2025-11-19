@@ -3,7 +3,6 @@
 namespace App\Filament\WorkshopSupervisor\Resources\WorkshopSupervisor;
 
 use App\Filament\WorkshopSupervisor\Resources\WorkshopSupervisor\ReportResource\Pages;
-use App\Filament\WorkshopSupervisor\Resources\WorkshopSupervisor\ReportResource\RelationManagers;
 use App\Models\Report;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -16,6 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Models\Workshop;
 use Closure;
+use Illuminate\Support\Collection;
 
 class ReportResource extends Resource
 {
@@ -50,10 +50,10 @@ class ReportResource extends Resource
                     ->required()
                     ->live()
                     ->label('الورشة')
-                    ->helperText('الورشة التي يتعلق بها التقرير.'),
+                    ->helperText('الورشة التي يتعلق بها التقرير.')
+                    ->disabledOn('edit'),
                 
                 Forms\Components\Select::make('employee_id')
-                    // <== هنا التعديل: تغيير Arrow Function إلى دالة مجهولة عادية
                     ->relationship('employee', 'first_name', function (Builder $query, Forms\Get $get) use ($supervisorId) {
                         $selectedWorkshopId = $get('workshop_id');
                         
@@ -75,12 +75,12 @@ class ReportResource extends Resource
                     ->disabledOn('edit'),
                 
                 Forms\Components\Select::make('project_id')
-                    // <== هنا التعديل: تغيير Arrow Function إلى دالة مجهولة عادية
                     ->relationship('project', 'name', function (Builder $query, Forms\Get $get) use ($supervisorId) {
                         $selectedWorkshopId = $get('workshop_id');
                         if (!$selectedWorkshopId) {
-                            return $query->whereNull('id');
+                            return $query->whereNull('id'); // لا يوجد مشروع إذا لم يتم اختيار ورشة
                         }
+                        // تصفية المشاريع التي تحتوي على الورشة المختارة
                         return $query->whereHas('workshops', fn ($subQuery) => $subQuery->where('id', $selectedWorkshopId));
                     })
                     ->searchable()
@@ -96,20 +96,22 @@ class ReportResource extends Resource
                     ->preload()
                     ->nullable()
                     ->label('الخدمة')
-                    ->helperText('الخدمة التي يتعلق بها التتقرير (اختياري).')
+                    ->helperText('الخدمة التي يتعلق بها التقرير (اختياري).')
                     ->disabledOn('edit'),
                 
                 Forms\Components\TextInput::make('report_type')
                     ->required()
                     ->maxLength(255)
                     ->label('نوع التقرير')
-                    ->helperText('مثال: تقرير تقدم، تقرير إنتاجية، تقرير جودة.'),
+                    ->helperText('مثال: تقرير تقدم، تقرير إنتاجية، تقرير جودة.')
+                    ->disabled(fn (string $operation, ?Report $record) => $operation === 'edit' && $record?->employee_id !== Auth::id()),
                 
                 RichEditor::make('report_details')
                     ->columnSpanFull()
                     ->nullable()
                     ->label('تفاصيل التقرير')
-                    ->helperText('وصف مفصل لمحتوى التقرير.'),
+                    ->helperText('وصف مفصل لمحتوى التقرير.')
+                    ->disabled(fn (string $operation, ?Report $record) => $operation === 'edit' && $record?->employee_id !== Auth::id()),
                 
                 Forms\Components\Select::make('report_status')
                     ->options([
@@ -131,15 +133,32 @@ class ReportResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('employee.name')
                     ->label('الموظف')
-                    ->searchable()
+                    // <== التعديل الرئيسي هنا: استخدام استعلام مخصص للبحث
+                    ->searchable(query: fn (Builder $query, string $search) => 
+                        $query->whereHas('employee', fn (Builder $subQuery) => 
+                            $subQuery->where('first_name', 'like', "%{$search}%")
+                                     ->orWhere('last_name', 'like', "%{$search}%")
+                                     ->orWhere('email', 'like', "%{$search}%")
+                        )
+                    )
                     ->sortable(),
                 Tables\Columns\TextColumn::make('project.name')
                     ->label('المشروع')
-                    ->searchable()
+                    // <== التعديل الرئيسي هنا: استخدام استعلام مخصص للبحث
+                    ->searchable(query: fn (Builder $query, string $search) =>
+                        $query->whereHas('project', fn (Builder $subQuery) =>
+                            $subQuery->where('name', 'like', "%{$search}%")
+                        )
+                    )
                     ->sortable(),
                 Tables\Columns\TextColumn::make('workshop.name')
                     ->label('الورشة')
-                    ->searchable()
+                    // <== التعديل الرئيسي هنا: استخدام استعلام مخصص للبحث
+                    ->searchable(query: fn (Builder $query, string $search) =>
+                        $query->whereHas('workshop', fn (Builder $subQuery) =>
+                            $subQuery->where('name', 'like', "%{$search}%")
+                        )
+                    )
                     ->sortable(),
                 Tables\Columns\TextColumn::make('report_type')
                     ->searchable()
@@ -166,11 +185,12 @@ class ReportResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->visible(fn (Report $record) => $record->employee_id === Auth::id()),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()->visible(fn (?Collection $records) => $records && $records->every(fn (Report $record) => $record->employee_id === Auth::id())),
                 ]),
             ]);
     }

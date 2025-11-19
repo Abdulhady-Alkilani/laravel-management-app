@@ -87,6 +87,7 @@ class TasksRelationManager extends RelationManager
             ->columns([
                 Tables\Columns\TextColumn::make('description')
                     ->label('الوصف')
+                    ->html()
                     ->limit(50),
                 Tables\Columns\TextColumn::make('progress')
                     ->label('التقدم (%)'),

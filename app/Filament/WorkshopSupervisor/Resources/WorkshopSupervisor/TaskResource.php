@@ -41,20 +41,20 @@ class TaskResource extends Resource
                     ->searchable()
                     ->preload()
                     ->required()
-                    ->live() // أضفناها لتحديث حقل الورشة بناءً عليها
-                    ->afterStateUpdated(fn (Forms\Set $set) => $set('workshop_id', null)) // إعادة تعيين الورشة عند تغيير المشروع
+                    ->live()
+                    ->afterStateUpdated(fn (Forms\Set $set) => $set('workshop_id', null))
                     ->label('المشروع'),
                 Forms\Components\Select::make('workshop_id')
                     ->relationship('workshop', 'name', fn (Builder $query, Forms\Get $get) => 
                          $query->where('supervisor_user_id', Auth::id())
-                               ->when($get('project_id'), fn ($query, $projectId) => $query->where('project_id', $projectId)) // تصفية الورش بناءً على المشروع المختار
+                               ->when($get('project_id'), fn ($query, $projectId) => $query->where('project_id', $projectId))
                     )
-                    ->getOptionLabelFromRecordUsing(fn (Workshop $record) => $record->name) // لعرض اسم الورشة
+                    ->getOptionLabelFromRecordUsing(fn (Workshop $record) => $record->name)
                     ->searchable()
                     ->preload()
                     ->required()
-                    ->live() // أضفناها لتحديث حقل العامل بناءً عليها
-                    ->afterStateUpdated(fn (Forms\Set $set) => $set('assigned_to_user_id', null)) // إعادة تعيين العامل عند تغيير الورشة
+                    ->live()
+                    ->afterStateUpdated(fn (Forms\Set $set) => $set('assigned_to_user_id', null))
                     ->label('الورشة'),
                 RichEditor::make('description')
                     ->required()
@@ -100,37 +100,47 @@ class TaskResource extends Resource
                 Forms\Components\Select::make('assigned_to_user_id')
                     ->options(function (Forms\Get $get) {
                         $workshopId = $get('workshop_id');
-                        if (!$workshopId) { return []; } // إذا لم يتم اختيار ورشة، لا تعرض أي عمال
+                        $supervisor = Auth::user();
+                        $options = [];
 
-                        $workersInWorkshop = Workshop::find($workshopId)?->workers;
-                        if (!$workersInWorkshop) { return []; }
+                        if ($supervisor) {
+                            $options[$supervisor->id] = "{$supervisor->first_name} {$supervisor->last_name} (المشرف الحالي)";
+                        }
 
-                        $engineerRoles = [
-                            'Architectural Engineer', 'Civil Engineer', 'Structural Engineer', 'Electrical Engineer',
-                            'Mechanical Engineer', 'Geotechnical Engineer', 'Quantity Surveyor', 'Site Engineer',
-                            'Environmental Engineer', 'Surveying Engineer'
-                        ];
+                        if ($workshopId) {
+                            $workersInWorkshop = Workshop::find($workshopId)?->workers;
+                            if ($workersInWorkshop) {
+                                $engineerRoles = [
+                                    'Architectural Engineer', 'Civil Engineer', 'Structural Engineer', 'Electrical Engineer',
+                                    'Mechanical Engineer', 'Geotechnical Engineer', 'Quantity Surveyor', 'Site Engineer',
+                                    'Environmental Engineer', 'Surveying Engineer'
+                                ];
 
-                        // تصفية العمال الذين ينتمون إلى الورشة المختارة ولديهم دور "Worker" أو دور هندسي
-                        return $workersInWorkshop->filter(function ($user) use ($engineerRoles) {
-                            return $user->hasRole('Worker') || collect($engineerRoles)->contains(fn ($role) => $user->hasRole($role));
-                        })->pluck('name', 'id')->toArray(); // 'name' هنا يجب أن يكون accessor في موديل User
+                                $filteredWorkers = $workersInWorkshop->filter(function ($user) use ($engineerRoles) {
+                                    return $user->hasRole('Worker') || collect($engineerRoles)->contains(fn ($role) => $user->hasRole($role));
+                                })->pluck('name', 'id')->toArray();
+                                
+                                $options = array_replace($options, $filteredWorkers);
+                            }
+                        }
+                        
+                        return $options;
                     })
                     ->getOptionLabelFromRecordUsing(fn (User $record) => "{$record->first_name} {$record->last_name} ({$record->email})")
                     ->searchable()
                     ->preload()
                     ->nullable()
                     ->label('العامل المسؤول')
-                    ->helperText('اختر عاملاً أو مهندساً مرتبطاً بالورشة المختارة.'),
+                    ->helperText('اختر عاملاً، مهندساً، أو المشرف الحالي المسؤول عن المهمة.'),
                 Forms\Components\TextInput::make('estimated_cost')
                     ->numeric()
                     ->nullable()
-                    ->prefix('SR')
+                    ->prefix('SYP')
                     ->label('التكلفة التقديرية'),
                 Forms\Components\TextInput::make('actual_cost')
                     ->numeric()
                     ->nullable()
-                    ->prefix('SR')
+                    ->prefix('SYP')
                     ->label('التكلفة الفعلية'),
             ]);
     }
@@ -140,20 +150,38 @@ class TaskResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('description')
+                    ->html()
                     ->searchable()
                     ->limit(50)
                     ->label('الوصف'),
                 Tables\Columns\TextColumn::make('project.name')
                     ->label('المشروع')
-                    ->searchable()
+                    // <== التعديل الرئيسي هنا: استخدام استعلام مخصص للبحث
+                    ->searchable(query: fn (Builder $query, string $search) => 
+                        $query->whereHas('project', fn (Builder $subQuery) => 
+                            $subQuery->where('name', 'like', "%{$search}%")
+                        )
+                    )
                     ->sortable(),
                 Tables\Columns\TextColumn::make('workshop.name')
                     ->label('الورشة')
-                    ->searchable()
+                    // <== التعديل الرئيسي هنا: استخدام استعلام مخصص للبحث
+                    ->searchable(query: fn (Builder $query, string $search) => 
+                        $query->whereHas('workshop', fn (Builder $subQuery) => 
+                            $subQuery->where('name', 'like', "%{$search}%")
+                        )
+                    )
                     ->sortable(),
                 Tables\Columns\TextColumn::make('assignedTo.name')
                     ->label('العامل المسؤول')
-                    ->searchable()
+                    // <== التعديل الرئيسي هنا: استخدام استعلام مخصص للبحث
+                    ->searchable(query: fn (Builder $query, string $search) => 
+                        $query->whereHas('assignedTo', fn (Builder $subQuery) => 
+                            $subQuery->where('first_name', 'like', "%{$search}%")
+                                     ->orWhere('last_name', 'like', "%{$search}%")
+                                     ->orWhere('email', 'like', "%{$search}%")
+                        )
+                    )
                     ->sortable(),
                 Tables\Columns\TextColumn::make('progress')
                     ->label('التقدم (%)')

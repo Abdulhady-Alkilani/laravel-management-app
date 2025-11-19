@@ -3,7 +3,6 @@
 namespace App\Filament\Manager\Resources\Manager;
 
 use App\Filament\Manager\Resources\Manager\TaskResource\Pages;
-use App\Filament\Manager\Resources\Manager\TaskResource\RelationManagers;
 use App\Models\Task;
 use App\Models\User;
 use App\Models\Workshop; // لاستيراد Workshop model
@@ -46,9 +45,8 @@ class TaskResource extends Resource
                     ->afterStateUpdated(fn (Forms\Set $set) => $set('workshop_id', null))
                     ->label('المشروع'),
                 Forms\Components\Select::make('workshop_id')
-                    // <== هنا التعديل: إضافة getOptionLabelFromRecordUsing
                     ->relationship('workshop', 'name', fn (Builder $query, Forms\Get $get) => $query->where('project_id', $get('project_id')))
-                    ->getOptionLabelFromRecordUsing(fn (Workshop $record) => $record->name) // <== عرض اسم الورشة
+                    ->getOptionLabelFromRecordUsing(fn (Workshop $record) => $record->name)
                     ->searchable()
                     ->preload()
                     ->required()
@@ -110,7 +108,7 @@ class TaskResource extends Resource
                                    $user->hasRole('Quantity Surveyor') ||
                                    $user->hasRole('Site Engineer') ||
                                    $user->hasRole('Environmental Engineer') ||
-                                   $user->hasRole('Surveying Engineer'); /* ... Engineer Roles ... */ ;
+                                   $user->hasRole('Surveying Engineer');
                         })->pluck('name', 'id')->toArray();
                     })
                     ->getOptionLabelFromRecordUsing(fn (User $record) => "{$record->first_name} {$record->last_name} ({$record->email})")
@@ -122,7 +120,7 @@ class TaskResource extends Resource
                 Forms\Components\TextInput::make('estimated_cost')
                     ->numeric()
                     ->nullable()
-                    ->prefix('SR')
+                    ->prefix('SYP')
                     ->label('التكلفة التقديرية'),
                 Forms\Components\TextInput::make('actual_cost')
                     ->numeric()
@@ -138,19 +136,37 @@ class TaskResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('description')
                     ->searchable()
+                    ->html()
                     ->limit(50)
                     ->label('الوصف'),
                 Tables\Columns\TextColumn::make('project.name')
                     ->label('المشروع')
-                    ->searchable()
+                    // <== التعديل الرئيسي هنا: استخدام استعلام مخصص للبحث
+                    ->searchable(query: fn (Builder $query, string $search) => 
+                        $query->whereHas('project', fn (Builder $subQuery) => 
+                            $subQuery->where('name', 'like', "%{$search}%")
+                        )
+                    )
                     ->sortable(),
                 Tables\Columns\TextColumn::make('workshop.name')
                     ->label('الورشة')
-                    ->searchable()
+                    // <== التعديل الرئيسي هنا: استخدام استعلام مخصص للبحث
+                    ->searchable(query: fn (Builder $query, string $search) => 
+                        $query->whereHas('workshop', fn (Builder $subQuery) => 
+                            $subQuery->where('name', 'like', "%{$search}%")
+                        )
+                    )
                     ->sortable(),
                 Tables\Columns\TextColumn::make('assignedTo.name')
                     ->label('العامل المسؤول')
-                    ->searchable()
+                    // <== التعديل الرئيسي هنا: استخدام استعلام مخصص للبحث
+                    ->searchable(query: fn (Builder $query, string $search) => 
+                        $query->whereHas('assignedTo', fn (Builder $subQuery) => 
+                            $subQuery->where('first_name', 'like', "%{$search}%")
+                                     ->orWhere('last_name', 'like', "%{$search}%")
+                                     ->orWhere('email', 'like', "%{$search}%")
+                        )
+                    )
                     ->sortable(),
                 Tables\Columns\TextColumn::make('progress')
                     ->label('التقدم (%)')

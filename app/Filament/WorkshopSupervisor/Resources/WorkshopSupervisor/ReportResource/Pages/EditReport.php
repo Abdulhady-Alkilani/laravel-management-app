@@ -3,8 +3,10 @@
 namespace App\Filament\WorkshopSupervisor\Resources\WorkshopSupervisor\ReportResource\Pages;
 
 use App\Filament\WorkshopSupervisor\Resources\WorkshopSupervisor\ReportResource;
+use App\Models\Report;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Support\Facades\Auth;
 
 class EditReport extends EditRecord
 {
@@ -13,7 +15,7 @@ class EditReport extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            Actions\DeleteAction::make()->visible(fn (Report $record) => $record->employee_id === Auth::id()),
             Actions\ViewAction::make(),
         ];
     }

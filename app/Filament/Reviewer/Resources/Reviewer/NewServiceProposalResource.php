@@ -5,7 +5,7 @@ namespace App\Filament\Reviewer\Resources\Reviewer;
 use App\Filament\Reviewer\Resources\Reviewer\NewServiceProposalResource\Pages;
 use App\Filament\Reviewer\Resources\Reviewer\NewServiceProposalResource\RelationManagers;
 use App\Models\NewServiceProposal;
-use App\Models\Service; // لاستخدامها عند الموافقة على اقتراح الخدمة
+use App\Models\Service;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\RichEditor;
 use Filament\Tables\Actions\Action;
+use App\Models\User; // تأكد من استيراد User model
 
 class NewServiceProposalResource extends Resource
 {
@@ -25,15 +26,13 @@ class NewServiceProposalResource extends Resource
     protected static ?string $pluralModelLabel = 'مقترحات الخدمات الجديدة للمراجعة';
     protected static ?string $modelLabel = 'مقترح خدمة';
 
-    // <== تعطيل صلاحيات الإنشاء والحذف بالكامل
     protected static bool $canCreate = false;
     protected static bool $canDelete = false;
 
-    // <== تصفية المقترحات التي تحتاج للمراجعة
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->whereIn('status', ['قيد المراجعة', 'تمت الموافقة', 'مرفوض']) // عرض جميع الحالات بعد المراجعة أيضاً
+            ->whereIn('status', ['قيد المراجعة', 'تمت الموافقة', 'مرفوض'])
             ->orderByDesc('proposal_date');
     }
 
@@ -44,18 +43,17 @@ class NewServiceProposalResource extends Resource
                 Forms\Components\TextInput::make('proposed_service_name')
                     ->columnSpanFull()
                     ->label('اسم الخدمة المقترحة')
-                    ->disabled(), // <== للقراءة فقط
+                    ->disabled(),
                 RichEditor::make('service_details')
                     ->columnSpanFull()
                     ->label('تفاصيل الخدمة المقترحة')
-                    ->disabled(), // <== للقراءة فقط
+                    ->disabled(),
                 Forms\Components\Placeholder::make('proposer_info')
                     ->content(fn (NewServiceProposal $record) => $record->proposer->name ?? 'N/A')
                     ->label('المقترح من قبل'),
                 Forms\Components\DatePicker::make('proposal_date')
                     ->label('تاريخ تقديم الاقتراح')
-                    ->disabled(), // <== للقراءة فقط
-                // حقول المراجعة (للتعديل)
+                    ->disabled(),
                 Forms\Components\Select::make('status')
                     ->options([
                         'تمت الموافقة' => 'تمت الموافقة',
@@ -64,11 +62,11 @@ class NewServiceProposalResource extends Resource
                     ])
                     ->required()
                     ->label('تغيير حالة الاقتراح'),
-                Forms\Components\Textarea::make('review_comments') // <== حقل التعليقات يظهر دائماً في نموذج التعديل
+                Forms\Components\Textarea::make('review_comments')
                     ->columnSpanFull()
                     ->nullable()
                     ->label('تعليقات المراجع'),
-                Forms\Components\Hidden::make('reviewer_user_id') // لتعيين المراجع الحالي تلقائياً عند التعديل
+                Forms\Components\Hidden::make('reviewer_user_id')
                     ->default(Auth::id())
                     ->dehydrated(true),
             ]);
@@ -84,7 +82,14 @@ class NewServiceProposalResource extends Resource
                     ->label('اسم المقترح'),
                 Tables\Columns\TextColumn::make('proposer.name')
                     ->label('المقترح من')
-                    ->searchable()
+                    // <== التعديل الرئيسي هنا لعمود المقترح من
+                    ->searchable(query: fn (Builder $query, string $search) =>
+                        $query->whereHas('proposer', fn (Builder $subQuery) =>
+                            $subQuery->where('first_name', 'like', "%{$search}%")
+                                     ->orWhere('last_name', 'like', "%{$search}%")
+                                     ->orWhere('email', 'like', "%{$search}%")
+                        )
+                    )
                     ->sortable(),
                 Tables\Columns\TextColumn::make('proposal_date')
                     ->date()
@@ -101,11 +106,19 @@ class NewServiceProposalResource extends Resource
                     })
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('reviewer.name') // <== لعرض اسم المراجع
+                Tables\Columns\TextColumn::make('reviewer.name')
                     ->label('المراجع')
+                    // <== التعديل الرئيسي هنا لعمود المراجع
+                    ->searchable(query: fn (Builder $query, string $search) =>
+                        $query->whereHas('reviewer', fn (Builder $subQuery) =>
+                            $subQuery->where('first_name', 'like', "%{$search}%")
+                                     ->orWhere('last_name', 'like', "%{$search}%")
+                                     ->orWhere('email', 'like', "%{$search}%")
+                        )
+                    )
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('review_comments') // <== لعرض التعليقات
+                Tables\Columns\TextColumn::make('review_comments')
                     ->label('التعليقات')
                     ->limit(50)
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -116,7 +129,6 @@ class NewServiceProposalResource extends Resource
                     ->label('تاريخ الإنشاء'),
             ])
             ->filters([
-                // يمكن إضافة فلتر لحالة الاقتراح
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
                         'قيد المراجعة' => 'قيد المراجعة',
@@ -126,14 +138,13 @@ class NewServiceProposalResource extends Resource
                     ->label('حالة الاقتراح'),
             ])
             ->actions([
-                // إجراءات الموافقة/الرفض
                 Action::make('approve')
                     ->label('موافقة')
                     ->color('success')
                     ->icon('heroicon-o-check-circle')
                     ->requiresConfirmation()
                     ->form([
-                        Forms\Components\Textarea::make('review_comments') // <== إضافة حقل التعليق هنا
+                        Forms\Components\Textarea::make('review_comments')
                             ->nullable()
                             ->label('تعليقات المراجعة')
                             ->helperText('أضف أي تعليقات عند الموافقة.'),
@@ -156,7 +167,7 @@ class NewServiceProposalResource extends Resource
                     ->icon('heroicon-o-x-circle')
                     ->requiresConfirmation()
                     ->form([
-                        Forms\Components\Textarea::make('review_comments') // <== إضافة حقل التعليق هنا
+                        Forms\Components\Textarea::make('review_comments')
                             ->required()
                             ->label('سبب الرفض')
                             ->helperText('الرجاء توضيح سبب الرفض.'),
@@ -168,11 +179,11 @@ class NewServiceProposalResource extends Resource
                         $record->save();
                     })
                     ->visible(fn (NewServiceProposal $record) => $record->status === 'قيد المراجعة'),
-                Tables\Actions\ViewAction::make(), // <== عرض التفاصيل
-                Tables\Actions\EditAction::make(), // <== للتعديل على الحالة والتعليقات
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                // لا توجد إجراءات مجمعة في هذه الحالة
+                //
             ]);
     }
 

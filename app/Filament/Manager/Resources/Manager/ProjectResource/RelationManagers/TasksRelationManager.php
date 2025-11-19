@@ -28,19 +28,17 @@ class TasksRelationManager extends RelationManager
     {
         return $form
             ->schema([
-                // === تعديل حقل المشروع (project_id) ===
                 Forms\Components\Hidden::make('project_id')
                     ->default($this->getOwnerRecord()->id)
                     ->dehydrated(true)
-                    ->visible(fn (string $operation): bool => $operation === 'create'), // يظهر فقط في وضع الإنشاء لتأكيد التعبئة التلقائية
+                    ->visible(fn (string $operation): bool => $operation === 'create'),
 
                 Forms\Components\Placeholder::make('project_info')
                     ->content(fn (?Task $record, string $operation) => $operation === 'create' ? $this->getOwnerRecord()->name : ($record?->project->name ?? 'غير محدد'))
                     ->label('المشروع التابع له المهمة')
-                    ->columnSpanFull(), // ليأخذ عرضاً كاملاً في النموذج
+                    ->columnSpanFull(),
 
                 Forms\Components\Select::make('workshop_id')
-                    // تصفية الورش بناءً على المشروع الحالي (المشروع الأب للـ Relation Manager)
                     ->relationship('workshop', 'name', fn (Builder $query) => $query->where('project_id', $this->getOwnerRecord()->id))
                     ->getOptionLabelFromRecordUsing(fn (Workshop $record) => $record->name)
                     ->searchable()
@@ -125,13 +123,13 @@ class TasksRelationManager extends RelationManager
                 Forms\Components\TextInput::make('estimated_cost')
                     ->numeric()
                     ->nullable()
-                    ->prefix('SR')
+                    ->prefix('SYP')
                     ->label('التكلفة التقديرية'),
                 
                 Forms\Components\TextInput::make('actual_cost')
                     ->numeric()
                     ->nullable()
-                    ->prefix('SR')
+                    ->prefix('SYP')
                     ->label('التكلفة الفعلية'),
             ]);
     }
@@ -142,15 +140,33 @@ class TasksRelationManager extends RelationManager
             ->recordTitleAttribute('description')
             ->columns([
                 Tables\Columns\TextColumn::make('description')
-                    ->label('الوصف')
-                    ->limit(50),
+                    ->searchable()
+                    ->html()
+                    ->limit(50)
+                    ->label('الوصف'),
+                Tables\Columns\TextColumn::make('project.name')
+                    ->label('المشروع')
+                    // <== التعديل الرئيسي هنا: استخدام استعلام مخصص للبحث
+                    ->searchable(query: fn (Builder $query, string $search) => 
+                        $query->whereHas('project', fn (Builder $subQuery) => 
+                            $subQuery->where('name', 'like', "%{$search}%")
+                        )
+                    )
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('workshop.name')
                     ->label('الورشة')
-                    ->searchable()
+                    // <== التعديل هنا: إزالة searchable() لأنه ضمن RelationManager لورشة محددة
                     ->sortable(),
                 Tables\Columns\TextColumn::make('assignedTo.name')
                     ->label('العامل المسؤول')
-                    ->searchable()
+                    // <== التعديل الرئيسي هنا: استخدام استعلام مخصص للبحث
+                    ->searchable(query: fn (Builder $query, string $search) => 
+                        $query->whereHas('assignedTo', fn (Builder $subQuery) => 
+                            $subQuery->where('first_name', 'like', "%{$search}%")
+                                     ->orWhere('last_name', 'like', "%{$search}%")
+                                     ->orWhere('email', 'like', "%{$search}%")
+                        )
+                    )
                     ->sortable(),
                 Tables\Columns\TextColumn::make('progress')
                     ->label('التقدم (%)')
@@ -184,5 +200,22 @@ class TasksRelationManager extends RelationManager
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            //
+        ];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+         // 'index' => Pages\ListTasks::route('/'),
+         // 'create' => Pages\CreateTask::route('/create'),
+         // 'edit' => Pages\EditTask::route('/{record}/edit'),
+         // 'view' => Pages\ViewTask::route('/{record}'),
+        ];
     }
 }

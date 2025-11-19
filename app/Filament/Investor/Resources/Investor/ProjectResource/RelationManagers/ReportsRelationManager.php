@@ -9,7 +9,8 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\RichEditor;
-use App\Models\Report; // استيراد Report model
+use App\Models\Report;
+use App\Models\User; // تأكد من استيراد User model
 
 class ReportsRelationManager extends RelationManager
 {
@@ -19,7 +20,6 @@ class ReportsRelationManager extends RelationManager
     protected static ?string $modelLabel = 'تقرير';
     protected static ?string $pluralModelLabel = 'تقارير';
 
-    // <== تعطيل صلاحيات الإنشاء، التعديل، الحذف داخل العلاقة أيضاً
     protected static bool $canCreate = false;
     protected static bool $canEdit = false;
     protected static bool $canDelete = false;
@@ -61,7 +61,14 @@ class ReportsRelationManager extends RelationManager
                     ->label('نوع التقرير'),
                 Tables\Columns\TextColumn::make('employee.name')
                     ->label('الموظف')
-                    ->searchable()
+                    // <== التعديل الرئيسي هنا: استخدام استعلام مخصص للبحث
+                    ->searchable(query: fn (Builder $query, string $search) => 
+                        $query->whereHas('employee', fn (Builder $subQuery) => 
+                            $subQuery->where('first_name', 'like', "%{$search}%")
+                                     ->orWhere('last_name', 'like', "%{$search}%")
+                                     ->orWhere('email', 'like', "%{$search}%")
+                        )
+                    )
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
@@ -70,16 +77,21 @@ class ReportsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('report_status')
                     ->label('الحالة')
                     ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'معلقة' => 'warning', 'تمت المراجعة' => 'info',
+                        'تمت الموافقة' => 'success', 'مرفوض' => 'danger',
+                        default => 'secondary',
+                    })
                     ->sortable(),
             ])
             ->filters([
                 //
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(), // <== فقط زر العرض
+                Tables\Actions\ViewAction::make(),
             ])
             ->bulkActions([
-                // <== لا توجد إجراءات مجمعة
+                //
             ]);
     }
 }

@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>نموذج طلب التوظيف - الخطوة 4</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- يمكنك إضافة مكتبة Select2 لتحسين تجربة اختيار المهارات -->
-    {{-- <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" /> --}}
-
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         body { background-color: #f8f9fa; }
         .container { max-width: 600px; margin-top: 50px; margin-bottom: 50px; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
@@ -28,22 +26,14 @@
         </div>
 
         @if (session('success'))
-            <div class="alert alert-success alert-fixed fade show" role="alert">
-                {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
+            <div class="alert alert-success alert-fixed fade show" role="alert"> {{ session('success') }} <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button> </div>
         @endif
         @if (session('error'))
-            <div class="alert alert-danger alert-fixed fade show" role="alert">
-                {{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
+            <div class="alert alert-danger alert-fixed fade show" role="alert"> {{ session('error') }} <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button> </div>
         @endif
         @if ($errors->any())
             <div class="alert alert-danger">
-                <ul class="mb-0">
-                    @foreach ($errors->all() as $error) <li>{{ $error }}</li> @endforeach
-                </ul>
+                <ul class="mb-0"> @foreach ($errors->all() as $error) <li>{{ $error }}</li> @endforeach </ul>
             </div>
         @endif
 
@@ -51,7 +41,25 @@
             @csrf
 
             <fieldset class="mb-4 p-3 border rounded">
-                <legend class="float-none w-auto px-2 fs-5">بيانات السيرة الذاتية (CV)</legend>
+                <legend class="float-none w-auto px-2 fs-5">البيانات الشخصية والخبرات</legend>
+
+                {{-- تم إزالة حقل "نبذة عنك (تفاصيل الملف الشخصي)" من هنا --}}
+
+                <div class="mb-3">
+                    <label for="experience" class="form-label">الخبرات المهنية <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="experience" name="experience" rows="5" placeholder="اذكر خبراتك المهنية السابقة بدءًا من الأحدث، مع ذكر اسم الشركة، المسمى الوظيفي، وفترة العمل، وأبرز الإنجازات.">{{ old('experience', $applicationData['step4']['experience'] ?? '') }}</textarea>
+                    <div class="form-text">مثال: مهندس موقع في شركة [اسم الشركة] من 2020-2024، أشرفت على مشروع [اسم المشروع] بنجاح.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="education" class="form-label">المؤهلات العلمية والدورات التدريبية <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="education" name="education" rows="5" placeholder="اذكر شهاداتك الأكاديمية (بكالوريوس، دبلوم، ثانوية)، والمؤسسة التعليمية، وسنة التخرج. بالإضافة إلى أي دورات تدريبية متخصصة أو شهادات مهنية حصلت عليها.">{{ old('education', $applicationData['step4']['education'] ?? '') }}</textarea>
+                    <div class="form-text">مثال: بكالوريوس هندسة مدنية - جامعة دمشق 2019، دورة سلامة مهنية OSHA 2021.</div>
+                </div>
+            </fieldset>
+
+            <fieldset class="mb-4 p-3 border rounded">
+                <legend class="float-none w-auto px-2 fs-5">مهاراتك</legend>
 
                 <div class="mb-3">
                     <label for="selected_skills" class="form-label">اختر مهاراتك من القائمة</label>
@@ -66,44 +74,14 @@
                     <div class="form-text">يمكنك اختيار عدة مهارات بالضغط على مفتاح Ctrl (أو Command في Mac) أثناء النقر.</div>
                 </div>
 
-                <div class="mb-3">
-                    <label for="new_skills" class="form-label">أضف مهارات جديدة (إن وجدت)</label>
-                    <textarea class="form-control" id="new_skills" name="new_skills" rows="2">{{ old('new_skills', $applicationData['step4']['new_skills'] ?? '') }}</textarea>
-                    <div class="form-text">إذا كانت لديك مهارات غير موجودة في القائمة أعلاه، يمكنك إضافتها هنا. الرجاء فصل كل مهارة بفاصلة (مثال: تصميم جرافيك، برمجة بايثون).</div>
-                </div>
-
-                <hr class="my-4">
-
-                <div class="mb-3">
-                    <label for="cv_experience" class="form-label">الخبرات المهنية</label>
-                    <textarea class="form-control" id="cv_experience" name="cv_experience" rows="4">{{ old('cv_experience', $applicationData['step4']['cv_experience'] ?? '') }}</textarea>
-                    <div class="form-text">اذكر خبراتك المهنية السابقة بدءًا من الأحدث، مع ذكر اسم الشركة، المسمى الوظيفي، وفترة العمل، وأبرز الإنجازات. (مثال: مهندس موقع في شركة [اسم الشركة] من 2020-2024، أشرفت على مشروع [اسم المشروع] بنجاح).</div>
-                </div>
-
-                <div class="mb-3">
-                    <label for="cv_education" class="form-label">المؤهلات العلمية والدورات التدريبية</label>
-                    <textarea class="form-control" id="cv_education" name="cv_education" rows="4">{{ old('cv_education', $applicationData['step4']['cv_education'] ?? '') }}</textarea>
-                    <div class="form-text">اذكر شهاداتك الأكاديمية (بكالوريوس، دبلوم، ثانوية)، والمؤسسة التعليمية، وسنة التخرج. بالإضافة إلى أي دورات تدريبية متخصصة أو شهادات مهنية حصلت عليها. (مثال: بكالوريوس هندسة مدنية - جامعة دمشق 2019، دورة سلامة مهنية OSHA 2021).</div>
-                </div>
+                {{-- تم إزالة حقل "أضف مهارات جديدة (إن وجدت)" من هنا --}}
             </fieldset>
 
-            <div class="d-grid gap-2">
-                <a href="{{ route('employee.apply.step3') }}" class="btn btn-secondary btn-lg">السابق</a>
+            <div class="d-grid">
                 <button type="submit" class="btn btn-primary btn-lg">إرسال طلب التوظيف</button>
             </div>
         </form>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    {{-- إذا استخدمت Select2 --}}
-    {{-- <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script> --}}
-    {{-- <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script> --}}
-    {{-- <script>
-        $(document).ready(function() {
-            $('#selected_skills').select2({
-                placeholder: "-- اختر مهارة أو أكثر --",
-                allowClear: true
-            });
-        });
-    </script> --}}
 </body>
 </html>

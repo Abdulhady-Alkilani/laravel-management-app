@@ -5,32 +5,30 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Cv;
 use App\Models\Role;
-use App\Models\Skill; // استيراد Model المهارة الجديد
+use App\Models\Skill;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Str;
+use Closure; // لاستخدام Closure في Validation Rules
 
 class EmployeeApplicationController extends Controller
 {
-    // ... (generateUniqueEmail, generateUsernameFromNames - تبقى كما هي) ...
-
     protected function generateUniqueEmail()
     {
         do {
             $uuid = Str::uuid();
-            $email = "applicant_{$uuid}@generated.com";
+            $email = "applicant_{$uuid}@generated.local"; // استخدام نطاق محلي
         } while (User::where('email', $email)->exists());
         return $email;
     }
 
-    protected function generateUsernameFromNames(string $firstName, string $lastName)
+    protected function generateUniqueUsername(string $firstName, string $lastName)
     {
         $baseUsername = Str::slug($firstName . '.' . $lastName, '.');
         if (empty($baseUsername) || preg_match('/^\.+$/', $baseUsername)) {
             $baseUsername = 'applicant';
         }
-
         $username = $baseUsername;
         $counter = 1;
         while (User::where('username', $username)->exists()) {
@@ -45,10 +43,24 @@ class EmployeeApplicationController extends Controller
     public function createStep1(Request $request)
     {
         $applicationData = $request->session()->get('employee_application', []);
-        $roles = Role::whereNotIn('name', ['Admin', 'Investor'])->get();
-        $translatedRoles = $roles->map(function ($role) {
-            return ['id' => $role->id, 'name' => $this->translateRoleName($role->name)];
-        });
+        
+        // <== جلب أدوار المهندسين والعامل فقط
+        $engineerAndWorkerRolesNames = [
+            'Worker',
+            'Architectural Engineer',
+            'Civil Engineer',
+            'Structural Engineer',
+            'Electrical Engineer',
+            'Mechanical Engineer',
+            'Geotechnical Engineer',
+            'Quantity Surveyor',
+            'Site Engineer',
+            'Environmental Engineer',
+            'Surveying Engineer'
+        ];
+        $roles = Role::whereIn('name', $engineerAndWorkerRolesNames)->get();
+        $translatedRoles = $roles->map(fn ($role) => ['id' => $role->id, 'name' => $this->translateRoleName($role->name)]);
+        
         return view('applications.employee-form-step1', compact('applicationData', 'translatedRoles'));
     }
 
@@ -60,14 +72,19 @@ class EmployeeApplicationController extends Controller
         $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
-            'role_id' => ['required', 'exists:roles,id'],
+            'role_id' => ['required', 'exists:roles,id'], // <== الدور مطلوب هنا
+        ], [
+            'first_name.required' => 'الاسم الأول مطلوب.',
+            'last_name.required' => 'الاسم الأخير مطلوب.',
+            'role_id.required' => 'يرجى اختيار الدور الوظيفي.',
+            'role_id.exists' => 'الدور المختار غير صالح.',
         ]);
 
         $firstName = $request->input('first_name');
         $lastName = $request->input('last_name');
-        $generatedUsername = $this->generateUsernameFromNames($firstName, $lastName);
+        $generatedUsername = $this->generateUniqueUsername($firstName, $lastName);
 
-        $request->session()->put('employee_application.step1', $request->only(['first_name', 'last_name', 'role_id']));
+        $request->session()->put('employee_application.step1', $request->only(['first_name', 'last_name', 'role_id'])); // <== تخزين الدور
         $request->session()->put('employee_application.generated_username', $generatedUsername);
 
         return redirect()->route('employee.apply.step2');
@@ -98,7 +115,7 @@ class EmployeeApplicationController extends Controller
         $request->validate([
             'email' => [
                 'nullable', 'string', 'email', 'max:255',
-                function ($attribute, $value, $fail) {
+                function ($attribute, $value, Closure $fail) {
                     if ($value && User::where($attribute, $value)->exists()) {
                         $fail('هذا البريد الإلكتروني مستخدم بالفعل. الرجاء استخدام بريد إلكتروني آخر فريد أو تركه فارغًا ليتم توليده تلقائياً.');
                     }
@@ -106,7 +123,7 @@ class EmployeeApplicationController extends Controller
             ],
             'username' => [
                 'nullable', 'string', 'max:255',
-                function ($attribute, $value, $fail) {
+                function ($attribute, $value, Closure $fail) {
                     if ($value && User::where($attribute, $value)->exists()) {
                         $fail('اسم المستخدم هذا مستخدم بالفعل. الرجاء استخدام اسم مستخدم آخر فريد أو تركه فارغًا ليتم توليده تلقائياً.');
                     }
@@ -138,11 +155,14 @@ class EmployeeApplicationController extends Controller
     {
         $request->validate([
             'password' => ['required', 'confirmed', Password::defaults()],
-            'gender' => ['nullable', 'string', 'in:male,female'],
+            'gender' => ['nullable', 'in:male,female'],
             'address' => ['nullable', 'string', 'max:255'],
             'nationality' => ['nullable', 'string', 'max:255'],
             'phone_number' => ['nullable', 'string', 'max:20'],
             'profile_details' => ['nullable', 'string'],
+        ], [
+            'password.required' => 'كلمة المرور مطلوبة.',
+            'password.confirmed' => 'تأكيد كلمة المرور غير متطابق.',
         ]);
 
         $request->session()->put('employee_application.step3', $request->only([
@@ -175,15 +195,18 @@ class EmployeeApplicationController extends Controller
     public function storeStep4(Request $request)
     {
         $request->validate([
-            'selected_skills' => ['nullable', 'array'], // المهارات المختارة من القائمة
+            'selected_skills' => ['nullable', 'array'],
             'selected_skills.*' => ['exists:skills,id'], // التأكد أن المهارات المختارة موجودة
-            'new_skills' => ['nullable', 'string', 'max:500'], // المهارات الجديدة التي يدخلها المستخدم
-            'cv_experience' => ['nullable', 'string'],
-            'cv_education' => ['nullable', 'string'],
+            // 'new_skills' تم إزالته من هنا
+            'experience' => ['required', 'string', 'max:2000'],
+            'education' => ['required', 'string', 'max:1000'],
+        ], [
+            'experience.required' => 'الخبرة مطلوبة لإكمال السيرة الذاتية.',
+            'education.required' => 'المؤهلات العلمية مطلوبة لإكمال السيرة الذاتية.',
         ]);
 
         $request->session()->put('employee_application.step4', $request->only([
-            'selected_skills', 'new_skills', 'cv_experience', 'cv_education'
+            'selected_skills', /* 'new_skills' تم إزالته */ 'experience', 'education'
         ]));
 
         $allApplicationData = $request->session()->get('employee_application');
@@ -193,19 +216,9 @@ class EmployeeApplicationController extends Controller
         $step3Data = $allApplicationData['step3'];
         $cvData = $allApplicationData['step4'];
 
-        // تحديد البريد الإلكتروني النهائي
-        $finalEmail = $step2Data['email'] ?? null;
-        if (empty($finalEmail)) {
-            $finalEmail = $this->generateUniqueEmail();
-        }
+        $finalEmail = $step2Data['email'] ?? $this->generateUniqueEmail();
+        $finalUsername = $step2Data['username'] ?? $this->generateUniqueUsername($step1Data['first_name'], $step1Data['last_name']);
 
-        // تحديد اسم المستخدم النهائي
-        $finalUsername = $step2Data['username'] ?? null;
-        if (empty($finalUsername)) {
-            $finalUsername = $this->generateUsernameFromNames($step1Data['first_name'], $step1Data['last_name']);
-        }
-
-        // إنشاء المستخدم
         $user = User::create([
             'first_name' => $step1Data['first_name'],
             'last_name' => $step1Data['last_name'],
@@ -219,52 +232,33 @@ class EmployeeApplicationController extends Controller
             'profile_details' => $step3Data['profile_details'] ?? null,
         ]);
 
-        // ربط الدور بالمستخدم
+        // <== ربط الدور المختار من الخطوة 1
         $userRole = Role::find($step1Data['role_id']);
         if ($userRole) {
             $user->roles()->attach($userRole->id);
         } else {
-             \Log::warning("Selected role ID {$step1Data['role_id']} not found for new user.");
+             \Log::warning("Selected role ID {$step1Data['role_id']} not found for new employee application user.");
         }
 
-        // إنشاء السيرة الذاتية
-        $cv = Cv::create([ // استخدم متغير $cv هنا لربط المهارات لاحقاً
+        $cv = Cv::create([
             'user_id' => $user->id,
             'profile_details' => $step3Data['profile_details'] ?? null,
-            // 'skills' لم يعد موجوداً في Cv Model
-            'experience' => $cvData['cv_experience'] ?? null,
-            'education' => $cvData['cv_education'] ?? null,
-            'cv_status' => 'قيد الانتظار',
+            'experience' => $cvData['experience'] ?? null,
+            'education' => $cvData['education'] ?? null,
+            'cv_status' => 'قيد الانتظار', // <== دائماً "قيد الانتظار"
             'rejection_reason' => null,
         ]);
 
-        // معالجة المهارات
         $skillIdsToAttach = [];
-
-        // 1. المهارات المختارة من القائمة
         if (!empty($cvData['selected_skills'])) {
             $skillIdsToAttach = array_merge($skillIdsToAttach, $cvData['selected_skills']);
         }
+        // <== تم إزالة منطق معالجة المهارات الجديدة من هنا
+        // if (!empty($cvData['new_skills'])) { ... }
 
-        // 2. المهارات الجديدة المدخلة من المستخدم
-        if (!empty($cvData['new_skills'])) {
-            // تقسيم المهارات الجديدة بفاصلة أو سطر جديد (أو أي فاصل تحدده)
-            $newSkillsArray = array_map('trim', explode(',', $cvData['new_skills']));
-            $newSkillsArray = array_filter($newSkillsArray); // إزالة القيم الفارغة
-
-            foreach ($newSkillsArray as $newSkillName) {
-                if (!empty($newSkillName)) {
-                    $skill = Skill::firstOrCreate(['name' => $newSkillName]);
-                    $skillIdsToAttach[] = $skill->id;
-                }
-            }
-        }
-
-        // ربط المهارات بالسيرة الذاتية
         if (!empty($skillIdsToAttach)) {
             $cv->skills()->syncWithoutDetaching(array_unique($skillIdsToAttach));
         }
-
 
         $clearPassword = $request->session()->get('employee_application.clear_password');
 
@@ -297,7 +291,7 @@ class EmployeeApplicationController extends Controller
     }
 
     // دالة مساعدة لترجمة أسماء الأدوار الإنجليزية إلى العربية للعرض
-   protected function translateRoleName(string $englishName): string
+    protected function translateRoleName(string $englishName): string
     {
         return [
             'Manager' => 'مدير مشروع',
@@ -306,14 +300,15 @@ class EmployeeApplicationController extends Controller
             'Reviewer' => 'مراجع',
             'Architectural Engineer' => 'مهندس معماري',
             'Civil Engineer' => 'مهندس مدني',
-            'Structural Engineer' => 'مهندس إنشائي',       // إضافة ترجمة الدور الجديد
-            'Electrical Engineer' => 'مهندس كهربائي',     // إضافة ترجمة الدور الجديد
-            'Mechanical Engineer' => 'مهندس ميكانيكي',     // إضافة ترجمة الدور الجديد
-            'Geotechnical Engineer' => 'مهندس جيوتقني',   // إضافة ترجمة الدور الجديد
-            'Quantity Surveyor' => 'مهندس كميات / تكاليف', // إضافة ترجمة الدور الجديد
-            'Site Engineer' => 'مهندس موقع',             // إضافة ترجمة الدور الجديد
-            'Environmental Engineer' => 'مهندس بيئي',      // إضافة ترجمة الدور الجديد
-            'Surveying Engineer' => 'مهندس مساحة',        // إضافة ترجمة الدور الجديد
-        ][$englishName] ?? $englishName; // العودة إلى الاسم الإنجليزي إذا لم توجد ترجمة
+            'Structural Engineer' => 'مهندس إنشائي',
+            'Electrical Engineer' => 'مهندس كهربائي',
+            'Mechanical Engineer' => 'مهندس ميكانيكي',
+            'Geotechnical Engineer' => 'مهندس جيوتقني',
+            'Quantity Surveyor' => 'مهندس كميات / تكاليف',
+            'Site Engineer' => 'مهندس موقع',
+            'Environmental Engineer' => 'مهندس بيئي',
+            'Surveying Engineer' => 'مهندس مساحة',
+            'Investor' => 'مستثمر',
+        ][$englishName] ?? $englishName;
     }
 }

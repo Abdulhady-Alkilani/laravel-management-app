@@ -13,6 +13,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Filament\Tables\Actions\Action;
+use App\Models\User; // تأكد من استيراد User model
 
 class CvResource extends Resource
 {
@@ -23,13 +24,10 @@ class CvResource extends Resource
     protected static ?string $pluralModelLabel = 'السير الذاتية للمراجعة';
     protected static ?string $modelLabel = 'سيرة ذاتية';
 
-    // <== تعطيل صلاحيات الإنشاء والحذف بالكامل
     protected static bool $canCreate = false;
-    // <== تمكين صلاحية التعديل
     protected static bool $canEdit = true;
     protected static bool $canDelete = false;
 
-    // <== تصفية السير الذاتية التي تحتاج للمراجعة
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
@@ -47,22 +45,21 @@ class CvResource extends Resource
                 Forms\Components\Textarea::make('profile_details')
                     ->columnSpanFull()
                     ->label('تفاصيل الملف الشخصي')
-                    ->disabled(), // <== للقراءة فقط
+                    ->disabled(),
                 Forms\Components\Textarea::make('experience')
                     ->columnSpanFull()
                     ->label('الخبرات')
-                    ->disabled(), // <== للقراءة فقط
+                    ->disabled(),
                 Forms\Components\Textarea::make('education')
                     ->columnSpanFull()
                     ->label('المؤهلات العلمية')
-                    ->disabled(), // <== للقراءة فقط
+                    ->disabled(),
                 Forms\Components\Select::make('skills_list')
                     ->multiple()
                     ->relationship('skills', 'name')
                     ->preload()
-                    ->disabled() // <== للقراءة فقط
+                    ->disabled()
                     ->label('المهارات'),
-                // حقول المراجعة القابلة للتعديل
                 Forms\Components\Select::make('cv_status')
                     ->options([
                         'تمت الموافقة' => 'تمت الموافقة',
@@ -71,7 +68,7 @@ class CvResource extends Resource
                     ])
                     ->required()
                     ->label('تغيير حالة السيرة الذاتية'),
-                Forms\Components\Textarea::make('rejection_reason') // <== حقل التعليقات/السبب يظهر هنا
+                Forms\Components\Textarea::make('rejection_reason')
                     ->columnSpanFull()
                     ->nullable()
                     ->label('تعليقات المراجعة / سبب الرفض')
@@ -84,9 +81,15 @@ class CvResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('user.name')
-                    ->searchable()
-                    ->sortable()
-                    ->label('صاحب السيرة'),
+                    ->label('صاحب السيرة')
+                    ->searchable(query: fn (Builder $query, string $search) => 
+                        $query->whereHas('user', fn (Builder $subQuery) => 
+                            $subQuery->where('first_name', 'like', "%{$search}%")
+                                     ->orWhere('last_name', 'like', "%{$search}%")
+                                     ->orWhere('email', 'like', "%{$search}%")
+                        )
+                    ) // <== التعديل الرئيسي هنا
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('experience')
                     ->label('الخبرة')
                     ->limit(50)
@@ -130,21 +133,20 @@ class CvResource extends Resource
                     ->label('حالة السيرة الذاتية'),
             ])
             ->actions([
-                // إجراءات الموافقة/الرفض تفتح نموذجًا لإدخال التعليقات مباشرة
                 Action::make('approve')
                     ->label('موافقة')
                     ->color('success')
                     ->icon('heroicon-o-check-circle')
                     ->requiresConfirmation()
                     ->form([
-                        Forms\Components\Textarea::make('rejection_reason') // <== حقل تعليق الموافقة
+                        Forms\Components\Textarea::make('rejection_reason')
                             ->nullable()
                             ->label('تعليقات المراجعة')
                             ->helperText('أضف أي تعليقات عند الموافقة.'),
                     ])
                     ->action(function (Cv $record, array $data) {
                         $record->cv_status = 'تمت الموافقة';
-                        $record->rejection_reason = $data['rejection_reason']; // يستخدم لتعليقات الموافقة
+                        $record->rejection_reason = $data['rejection_reason'];
                         $record->save();
                     })
                     ->visible(fn (Cv $record) => $record->cv_status === 'قيد الانتظار'),
@@ -154,7 +156,7 @@ class CvResource extends Resource
                     ->icon('heroicon-o-x-circle')
                     ->requiresConfirmation()
                     ->form([
-                        Forms\Components\Textarea::make('rejection_reason') // <== حقل سبب الرفض
+                        Forms\Components\Textarea::make('rejection_reason')
                             ->required()
                             ->label('سبب الرفض')
                             ->helperText('الرجاء توضيح سبب الرفض.'),
@@ -165,18 +167,18 @@ class CvResource extends Resource
                         $record->save();
                     })
                     ->visible(fn (Cv $record) => $record->cv_status === 'قيد الانتظار'),
-                Tables\Actions\ViewAction::make(), // <== عرض التفاصيل
-                Tables\Actions\EditAction::make(), // <== للوصول إلى نموذج التعديل الكامل
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                // لا توجد إجراءات مجمعة في هذه الحالة
+                //
             ]);
     }
 
     public static function getRelations(): array
     {
         return [
-            RelationManagers\SkillsRelationManager::class, // <== ستكون للقراءة فقط
+            RelationManagers\SkillsRelationManager::class,
         ];
     }
 
@@ -185,7 +187,7 @@ class CvResource extends Resource
         return [
             'index' => Pages\ListCvs::route('/'),
             'view' => Pages\ViewCv::route('/{record}'),
-            'edit' => Pages\EditCv::route('/{record}/edit'), // <== تفعيل صفحة التعديل
+            'edit' => Pages\EditCv::route('/{record}/edit'),
         ];
     }
 }

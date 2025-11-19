@@ -12,7 +12,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Project;
-use Illuminate\Validation\Rules\Unique; // <== التعديل هنا: استخدام الكلاس الصحيح من Laravel
+use Illuminate\Validation\Rules\Unique;
 use Filament\Tables\Actions\Action;
 
 // استيراد Relation Managers الخاصة بالعمال والمهام
@@ -46,7 +46,6 @@ class WorkshopResource extends Resource
                     ->maxLength(255)
                     ->unique(
                         ignoreRecord: true,
-                        // <== التعديل هنا: تغيير نوع التلميح إلى Illuminate\Validation\Rules\Unique
                         modifyRuleUsing: fn (Unique $rule) => $rule->where('supervisor_user_id', Auth::id())
                     )
                     ->label('اسم الورشة')
@@ -56,7 +55,7 @@ class WorkshopResource extends Resource
                     ->nullable()
                     ->label('وصف الورشة'),
                 Forms\Components\Select::make('project_id')
-                    ->relationship('project', 'name', fn (Builder $query) => 
+                    ->relationship('project', 'name', fn (Builder $query) =>
                         $query->whereHas('workshops', fn (Builder $subQuery) => $subQuery->where('supervisor_user_id', Auth::id()))
                               ->orWhereDoesntHave('workshops') // يمكن ربطها بمشاريع ليس بها ورش بعد
                     )
@@ -113,17 +112,16 @@ class WorkshopResource extends Resource
                     ->form([
                         Forms\Components\Select::make('selected_workshop_id')
                             ->label('اختر ورشة للربط')
-                            ->helperText('اختر ورشة غير مرتبطة بمشاريعك حالياً، أو غير مرتبطة بأي مشروع.')
+                            ->helperText('اختر ورشة غير مرتبطة بأي مشروع لربطها بمشروعك.')
                             ->required()
                             ->searchable()
                             ->getSearchResultsUsing(function (string $search) {
-                                $supervisorId = Auth::id();
+                                // <== التعديل الرئيسي هنا: فقط الورش التي لا ترتبط بأي مشروع
                                 return Workshop::query()
-                                    ->where(fn (Builder $query) => $query->where('name', 'like', "%{$search}%")
-                                        ->orWhere('description', 'like', "%{$search}%"))
-                                    ->where(function (Builder $query) use ($supervisorId) {
-                                        $query->whereNull('project_id')
-                                              ->orWhereDoesntHave('project', fn (Builder $subQuery) => $subQuery->where('manager_user_id', $supervisorId));
+                                    ->whereNull('project_id') // هذا الشرط يضمن عرض الورش غير المرتبطة فقط
+                                    ->where(function (Builder $query) use ($search) {
+                                        $query->where('name', 'like', "%{$search}%")
+                                              ->orWhere('description', 'like', "%{$search}%");
                                     })
                                     ->limit(50)
                                     ->get()
@@ -138,7 +136,9 @@ class WorkshopResource extends Resource
                             ->label('اختر المشروع المراد الربط به')
                             ->helperText('اختر أحد مشاريعك لربط الورشة به.')
                             ->required()
-                            ->relationship('project', 'name', fn (Builder $query) => $query->whereHas('workshops', fn (Builder $subQuery) => $subQuery->where('supervisor_user_id', Auth::id())))
+                            ->relationship('project', 'name', fn (Builder $query) => 
+                                $query->whereHas('workshops', fn (Builder $subQuery) => $subQuery->where('supervisor_user_id', Auth::id()))
+                            )
                             ->searchable()
                             ->preload(),
                     ])

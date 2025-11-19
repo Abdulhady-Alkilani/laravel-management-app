@@ -9,14 +9,14 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\RichEditor;
-use App\Models\User; // لاستخدام Model المستخدم لتصفية العمال/المهندسين
-use App\Models\Role; // لاستخدام Model الدور (لم نعد نحتاجه هنا مباشرة، يمكن إزالته إذا لم يستخدم)
-use App\Models\Workshop; // لاستيراد Workshop model للحصول على العمال
-use Closure; // لاستيراد Closure
+use App\Models\User;
+use App\Models\Role;
+use App\Models\Workshop;
+use Closure;
 
 class TasksRelationManager extends RelationManager
 {
-    protected static string $relationship = 'tasks'; // اسم العلاقة في Workshop model
+    protected static string $relationship = 'tasks';
     protected static ?string $title = 'المهام';
     protected static ?string $pluralTitle = 'المهام';
     protected static ?string $modelLabel = 'مهمة';
@@ -27,7 +27,6 @@ class TasksRelationManager extends RelationManager
     {
         return $form
             ->schema([
-                // === حقل project_id: يتم تعبئته تلقائياً من الورشة الأب ===
                 Forms\Components\Hidden::make('project_id')
                     ->default($this->getOwnerRecord()->project_id)
                     ->dehydrated(true),
@@ -36,7 +35,6 @@ class TasksRelationManager extends RelationManager
                     ->label('المشروع التابع له المهمة')
                     ->columnSpanFull(),
 
-                // === حقل workshop_id: يتم تعبئته تلقائياً بالورشة الأب ===
                 Forms\Components\Hidden::make('workshop_id')
                     ->default($this->getOwnerRecord()->id)
                     ->dehydrated(true),
@@ -57,7 +55,7 @@ class TasksRelationManager extends RelationManager
                     ->maxValue(100)
                     ->required()
                     ->default(0)
-                    ->live() // مهم لتفعيل قواعد التحقق الديناميكية مع الحالة
+                    ->live()
                     ->label('التقدم (%)')
                     ->helperText('نسبة إنجاز المهمة (0-100%).'),
                 
@@ -72,7 +70,7 @@ class TasksRelationManager extends RelationManager
                     ->default('لم تبدأ')
                     ->label('الحالة')
                     ->helperText('الحالة الحالية للمهمة.')
-                    ->rules([ // <== قواعد التحقق التي تربط التقدم بالحالة
+                    ->rules([
                         fn (Forms\Get $get): Closure =>
                             function (string $attribute, $value, Closure $fail) use ($get) {
                                 if ($value === 'مكتملة' && (int)$get('progress') < 100) {
@@ -98,7 +96,7 @@ class TasksRelationManager extends RelationManager
                     ->nullable()
                     ->label('تاريخ الانتهاء الفعلي')
                     ->helperText('التاريخ الفعلي الذي تم فيه إنجاز المهمة.')
-                    ->visible(fn (Forms\Get $get) => $get('status') === 'مكتملة'), // يظهر فقط إذا كانت الحالة مكتملة
+                    ->visible(fn (Forms\Get $get) => $get('status') === 'مكتملة'),
                 
                 Forms\Components\Select::make('assigned_to_user_id')
                     ->label('العامل المسؤول')
@@ -107,7 +105,7 @@ class TasksRelationManager extends RelationManager
                     ->nullable()
                     ->helperText('اختر عاملاً أو مهندساً مرتبطاً بالورشة الحالية.')
                     ->options(function (): array {
-                        $workshop = $this->getOwnerRecord(); // الحصول على الورشة الأب (الورشة الحالية)
+                        $workshop = $this->getOwnerRecord();
                         if (!$workshop) {
                             return [];
                         }
@@ -118,12 +116,11 @@ class TasksRelationManager extends RelationManager
                             'Environmental Engineer', 'Surveying Engineer'
                         ];
 
-                        // جلب العمال/المهندسين المرتبطين بهذه الورشة فقط
-                        return $workshop->workers // علاقة workers في موديل Workshop
+                        return $workshop->workers
                             ->filter(fn (User $user) => 
                                 $user->hasRole('Worker') || collect($engineerRoles)->contains(fn ($role) => $user->hasRole($role))
                             )
-                            ->pluck('name', 'id') // 'name' accessor في User model
+                            ->pluck('name', 'id')
                             ->toArray();
                     })
                     ->getOptionLabelUsing(fn (?int $value): ?string => 
@@ -157,11 +154,23 @@ class TasksRelationManager extends RelationManager
                     ->label('الوصف'),
                 Tables\Columns\TextColumn::make('project.name')
                     ->label('المشروع')
-                    ->searchable()
+                    // <== التعديل الرئيسي هنا: استخدام استعلام مخصص للبحث
+                    ->searchable(query: fn (Builder $query, string $search) => 
+                        $query->whereHas('project', fn (Builder $subQuery) => 
+                            $subQuery->where('name', 'like', "%{$search}%")
+                        )
+                    )
                     ->sortable(),
                 Tables\Columns\TextColumn::make('assignedTo.name')
                     ->label('العامل المسؤول')
-                    ->searchable()
+                    // <== التعديل الرئيسي هنا: استخدام استعلام مخصص للبحث
+                    ->searchable(query: fn (Builder $query, string $search) => 
+                        $query->whereHas('assignedTo', fn (Builder $subQuery) => 
+                            $subQuery->where('first_name', 'like', "%{$search}%")
+                                     ->orWhere('last_name', 'like', "%{$search}%")
+                                     ->orWhere('email', 'like', "%{$search}%")
+                        )
+                    )
                     ->sortable(),
                 Tables\Columns\TextColumn::make('progress')
                     ->label('التقدم (%)')

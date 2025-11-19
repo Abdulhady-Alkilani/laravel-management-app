@@ -70,47 +70,34 @@ class User extends Authenticatable implements FilamentUser
      * <== تم تعديل توقيع الدالة هنا لاستقبال كائن Filament\Panel
      */
     public function canAccessPanel(Panel $panel): bool
-    {
-        // اسم اللوحة الافتراضي لـ Filament Admin هو 'admin'
-        // يمكنك الوصول إلى معرف اللوحة عبر $panel->getId()
-        if ($panel->getId() === 'admin') {
-            return $this->hasRole('Admin');
+        {
+        if ($panel->getId() === 'admin') return $this->hasRole('Admin');
+        if ($panel->getId() === 'manager') return $this->hasRole('Manager');
+        if ($panel->getId() === 'workshop_supervisor') return $this->hasRole('Workshop Supervisor');
+        if ($panel->getId() === 'worker') return $this->hasRole('Worker');
+        if ($panel->getId() === 'investor') return $this->hasRole('Investor');
+        if ($panel->getId() === 'reviewer') return $this->hasRole('Reviewer');
+        
+        if ($panel->getId() === 'engineer') {
+            $engineerRoles = [
+                'Architectural Engineer', 'Civil Engineer', 'Structural Engineer', 'Electrical Engineer',
+                'Mechanical Engineer', 'Geotechnical Engineer', 'Quantity Surveyor', 'Site Engineer',
+                'Environmental Engineer', 'Surveying Engineer'
+            ];
+            foreach ($engineerRoles as $roleName) {
+                if ($this->hasRole($roleName)) return true;
+            }
+            return false;
+        }
+        
+        // <== هنا التعديل: يجب أن يكون الوصول مقيدًا بدور "Service Proposer" فقط
+        if ($panel->getId() === 'service_proposer') {
+            return $this->hasRole('Service Proposer'); // <== هذا هو المنطق الصحيح
         }
 
-        // إذا كان لديك لوحات Filament إضافية، يمكنك تعريفها هنا
-        // مثال:
-         if ($panel->getId() === 'manager') {
-             return $this->hasRole('Manager');
-         }
-
-         if ($panel->getId() === 'workshop_supervisor') return $this->hasRole('Workshop Supervisor'); // <== إضافة هذا الشرط
-         if ($panel->getId() === 'investor') return $this->hasRole('Investor'); // <== إضافة هذا الشرط
-         if ($panel->getId() === 'reviewer') return $this->hasRole('Reviewer'); // <== إضافة هذا الشرط
-         if ($panel->getId() === 'worker') return $this->hasRole('Worker'); // <== إضافة هذا الشرط
-
-
-        if ($panel->getId() === 'engineer') { // <== منطق لوحة المهندس الموحدة
-        $engineerRoles = [
-            'Architectural Engineer', 'Civil Engineer', 'Structural Engineer', 'Electrical Engineer',
-            'Mechanical Engineer', 'Geotechnical Engineer', 'Quantity Surveyor', 'Site Engineer',
-            'Environmental Engineer', 'Surveying Engineer'
-        ];
-        foreach ($engineerRoles as $roleName) {
-            if ($this->hasRole($roleName)) return true;
-        }
         return false;
     }
 
-
-         if ($panel->getId() === 'service_proposer') {
-        // إذا كان هناك دور 'Service Proposer' محدد:
-        // return $this->hasRole('Service Proposer');
-        // أو، إذا كان أي مستخدم ليس له دور إداري/متخصص يمكن أن يكون مقدم خدمة:
-        return !$this->hasRole('Admin') && !$this->hasRole('Manager') && !$this->hasRole('Workshop Supervisor') && !$this->hasRole('Reviewer');
-    }   
-
-        return false;
-    }
 
     public function cvs()
     {

@@ -41,7 +41,6 @@ class WorkerWorkshopLinkResource extends Resource
                     ->preload()
                     ->required()
                     ->getSearchResultsUsing(function (string $search): array {
-                        // تعريف الأدوار الهندسية (إذا كانوا يعتبرون عمالاً للتعيين)
                         $engineerRoles = [
                             'Architectural Engineer', 'Civil Engineer', 'Structural Engineer', 'Electrical Engineer',
                             'Mechanical Engineer', 'Geotechnical Engineer', 'Quantity Surveyor', 'Site Engineer',
@@ -49,16 +48,12 @@ class WorkerWorkshopLinkResource extends Resource
                         ];
                         
                         return User::query()
-                            // شرط 1: أن يكون لديه دور "Worker" أو أي من الأدوار الهندسية
                             ->whereHas('roles', fn (Builder $roleQuery) => 
                                 $roleQuery->where('name', 'Worker')
                                           ->orWhereIn('name', $engineerRoles)
                             )
-                            // شرط 2: أن تكون حالة السيرة الذاتية "تمت الموافقة"
                             ->whereHas('cvs', fn (Builder $cvQuery) => $cvQuery->where('cv_status', 'تمت الموافقة'))
-                            // شرط 3: ألا يكون مرتبطاً بأي ورشة حالياً
                             ->whereDoesntHave('workerWorkshopLinks')
-                            // شروط البحث العادية بالاسم الأول، الأخير، أو البريد الإلكتروني
                             ->where(function (Builder $query) use ($search) {
                                 $query->where('first_name', 'like', "%{$search}%")
                                     ->orWhere('last_name', 'like', "%{$search}%")
@@ -74,7 +69,6 @@ class WorkerWorkshopLinkResource extends Resource
                     ->getOptionLabelUsing(fn (?int $value): ?string => 
                         $value ? (User::find($value)?->name ?? 'غير معروف') : null
                     )
-                    // قاعدة تحقق لضمان عدم تعيين نفس العامل لنفس الورشة مرتين
                     ->unique(
                         ignoreRecord: true, 
                         modifyRuleUsing: fn (Unique $rule, Forms\Get $get) => $rule->where('workshop_id', $get('workshop_id'))
@@ -99,13 +93,25 @@ class WorkerWorkshopLinkResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('worker.name')
-                    ->searchable()
-                    ->sortable()
-                    ->label('العامل'),
+                    ->label('العامل')
+                    // <== التعديل الرئيسي هنا: استخدام استعلام مخصص للبحث
+                    ->searchable(query: fn (Builder $query, string $search) => 
+                        $query->whereHas('worker', fn (Builder $subQuery) => 
+                            $subQuery->where('first_name', 'like', "%{$search}%")
+                                     ->orWhere('last_name', 'like', "%{$search}%")
+                                     ->orWhere('email', 'like', "%{$search}%")
+                        )
+                    )
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('workshop.name')
-                    ->searchable()
-                    ->sortable()
-                    ->label('الورشة'),
+                    ->label('الورشة')
+                    // <== التعديل الرئيسي هنا: استخدام استعلام مخصص للبحث
+                    ->searchable(query: fn (Builder $query, string $search) => 
+                        $query->whereHas('workshop', fn (Builder $subQuery) => 
+                            $subQuery->where('name', 'like', "%{$search}%")
+                        )
+                    )
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('assigned_date')
                     ->date()
                     ->sortable()

@@ -46,21 +46,27 @@ class CustomLogin extends Component
 
         // المنطق الدقيق للتوجيه لكل دور
         if ($user->hasRole('Admin')) {
+            session()->flash('status', "مرحباً بك، {$user->first_name}! تم تسجيل دخولك بنجاح.");
             return redirect()->intended('/admin');
         }
         if ($user->hasRole('Manager')) {
+            session()->flash('status', "مرحباً بك، {$user->first_name}! تم تسجيل دخولك بنجاح.");
             return redirect()->intended('/manager');
         }
         if ($user->hasRole('Workshop Supervisor')) {
+            session()->flash('status', "مرحباً بك، {$user->first_name}! تم تسجيل دخولك بنجاح.");
             return redirect()->intended('/workshop-supervisor');
         }
         if ($user->hasRole('Worker')) {
+            session()->flash('status', "مرحباً بك، {$user->first_name}! تم تسجيل دخولك بنجاح.");
             return redirect()->intended('/worker');
         }
         if ($user->hasRole('Investor')) {
+            session()->flash('status', "مرحباً بك، {$user->first_name}! تم تسجيل دخولك بنجاح.");
             return redirect()->intended('/investor');
         }
         if ($user->hasRole('Reviewer')) {
+            session()->flash('status', "مرحباً بك، {$user->first_name}! تم تسجيل دخولك بنجاح.");
             return redirect()->intended('/reviewer');
         }
         // لوحة المهندس موحدة لجميع أنواع المهندسين
@@ -71,11 +77,13 @@ class CustomLogin extends Component
         ];
         foreach ($engineerRoles as $roleName) {
             if ($user->hasRole($roleName)) {
+                session()->flash('status', "مرحباً بك، {$user->first_name}! تم تسجيل دخولك بنجاح.");
                 return redirect()->intended('/engineer'); // توجيه جميع المهندسين إلى /engineer
             }
         }
         // لمقدم طلب/اقتراح خدمة
         if ($user->hasRole('Service Proposer')) {
+            session()->flash('status', "مرحباً بك، {$user->first_name}! تم تسجيل دخولك بنجاح.");
             return redirect()->intended('/service-proposer');
         }
 

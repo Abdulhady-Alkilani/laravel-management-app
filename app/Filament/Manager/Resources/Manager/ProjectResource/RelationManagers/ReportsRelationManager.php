@@ -2,7 +2,6 @@
 
 namespace App\Filament\Manager\Resources\Manager\ProjectResource\RelationManagers;
 
-use App\Models\Report;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -12,6 +11,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\RichEditor;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
+use App\Models\Project;
+use App\Models\Report;
 use App\Models\Workshop;
 use App\Models\Service;
 
@@ -74,8 +75,8 @@ class ReportsRelationManager extends RelationManager
                         'تمت الموافقة' => 'تمت الموافقة',
                     ])
                     ->required()
-                    ->default('تمت المراجعة') // <== لا يزال كقيمة افتراضية، لكن المستخدم يمكنه تغييرها
-                    ->disabled(fn (string $operation): bool => $operation === 'view') // <== التعديل هنا: معطل فقط عند العرض
+                    ->default('تمت المراجعة')
+                    ->disabled(fn (string $operation): bool => $operation === 'view')
                     ->label('حالة التقرير'),
             ]);
     }
@@ -87,15 +88,32 @@ class ReportsRelationManager extends RelationManager
             ->columns([
                 Tables\Columns\TextColumn::make('employee.name')
                     ->label('الموظف')
-                    ->searchable()
+                    // <== التعديل الرئيسي هنا: استخدام استعلام مخصص للبحث
+                    ->searchable(query: fn (Builder $query, string $search) => 
+                        $query->whereHas('employee', fn (Builder $subQuery) => 
+                            $subQuery->where('first_name', 'like', "%{$search}%")
+                                     ->orWhere('last_name', 'like', "%{$search}%")
+                                     ->orWhere('email', 'like', "%{$search}%")
+                        )
+                    )
                     ->sortable(),
                 Tables\Columns\TextColumn::make('workshop.name')
                     ->label('الورشة')
-                    ->searchable()
+                    // <== التعديل الرئيسي هنا: استخدام استعلام مخصص للبحث
+                    ->searchable(query: fn (Builder $query, string $search) => 
+                        $query->whereHas('workshop', fn (Builder $subQuery) => 
+                            $subQuery->where('name', 'like', "%{$search}%")
+                        )
+                    )
                     ->sortable(),
                 Tables\Columns\TextColumn::make('service.name')
                     ->label('الخدمة')
-                    ->searchable()
+                    // <== التعديل الرئيسي هنا: استخدام استعلام مخصص للبحث
+                    ->searchable(query: fn (Builder $query, string $search) => 
+                        $query->whereHas('service', fn (Builder $subQuery) => 
+                            $subQuery->where('name', 'like', "%{$search}%")
+                        )
+                    )
                     ->sortable(),
                 Tables\Columns\TextColumn::make('report_type')
                     ->searchable()
@@ -119,9 +137,6 @@ class ReportsRelationManager extends RelationManager
             ->filters([
                 //
             ])
-            ->headerActions([
-                Tables\Actions\CreateAction::make(),
-            ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
@@ -132,5 +147,23 @@ class ReportsRelationManager extends RelationManager
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            //
+        ];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+        /*  'index' => Pages\ListReports::route('/'),
+            'create' => Pages\CreateReport::route('/create'),
+            'view' => Pages\ViewReport::route('/{record}'),
+            'edit' => Pages\EditReport::route('/{record}/edit'),
+            */
+        ];
     }
 }
