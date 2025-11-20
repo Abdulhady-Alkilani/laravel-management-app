@@ -33,6 +33,7 @@ class WorkerTasksCalendarWidget extends BaseWidget
             ->columns([
                 TextColumn::make('description')
                     ->label('الوصف')
+                    ->html()
                     ->limit(50),
                 TextColumn::make('project.name')
                     ->label('المشروع'),
