@@ -64,7 +64,7 @@ class CustomRegistration extends Component
         return $username;
     }
 
-        protected function translateRoleName(string $englishName): string
+   protected function translateRoleName(string $englishName): string
     {
         return [
             'Manager' => 'مدير مشروع',
@@ -85,7 +85,6 @@ class CustomRegistration extends Component
             'Service Proposer' => 'مستخدم', // <== إضافة ترجمة هذا الدور
         ][$englishName] ?? $englishName;
     }
-
 
     // --- قواعد التحقق من الصحة ---
     protected function rules(): array
@@ -152,7 +151,7 @@ class CustomRegistration extends Component
             session()->flash('registered_username', $finalUsername);
             session()->flash('registered_password', $this->password); // كلمة المرور الواضحة لصفحة الإكمال
 
-            return redirect()->route('login');
+            return redirect()->route('registration.completion');
         } catch (ValidationException $e) {
             session()->flash('error', 'الرجاء تصحيح الأخطاء في النموذج.');
             throw $e; // إعادة رمي الاستثناء لعرض الأخطاء في الواجهة
@@ -162,7 +161,7 @@ class CustomRegistration extends Component
     }
 
     // --- دالة Render لعرض الـ View ---
-        public function render()
+      public function render()
     {
         // <== هنا التعديل: جلب الأدوار المحددة فقط
         $allowedRolesNames = [

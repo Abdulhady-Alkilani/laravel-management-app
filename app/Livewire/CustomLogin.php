@@ -45,31 +45,26 @@ class CustomLogin extends Component
         session()->flash('status', "مرحباً بك، {$user->first_name}! تم تسجيل دخولك بنجاح.");
 
         // المنطق الدقيق للتوجيه لكل دور
+        // <== التعديل هنا: استخدام redirect() بدلاً من redirect()->intended()
         if ($user->hasRole('Admin')) {
-            session()->flash('status', "مرحباً بك، {$user->first_name}! تم تسجيل دخولك بنجاح.");
-            return redirect()->intended('/admin');
+            return redirect('/admin');
         }
         if ($user->hasRole('Manager')) {
-            session()->flash('status', "مرحباً بك، {$user->first_name}! تم تسجيل دخولك بنجاح.");
-            return redirect()->intended('/manager');
+            return redirect('/manager');
         }
         if ($user->hasRole('Workshop Supervisor')) {
-            session()->flash('status', "مرحباً بك، {$user->first_name}! تم تسجيل دخولك بنجاح.");
-            return redirect()->intended('/workshop-supervisor');
+            return redirect('/workshop-supervisor');
         }
         if ($user->hasRole('Worker')) {
-            session()->flash('status', "مرحباً بك، {$user->first_name}! تم تسجيل دخولك بنجاح.");
-            return redirect()->intended('/worker');
+            return redirect('/worker');
         }
         if ($user->hasRole('Investor')) {
-            session()->flash('status', "مرحباً بك، {$user->first_name}! تم تسجيل دخولك بنجاح.");
-            return redirect()->intended('/investor');
+            return redirect('/investor');
         }
         if ($user->hasRole('Reviewer')) {
-            session()->flash('status', "مرحباً بك، {$user->first_name}! تم تسجيل دخولك بنجاح.");
-            return redirect()->intended('/reviewer');
+            return redirect('/reviewer');
         }
-        // لوحة المهندس موحدة لجميع أنواع المهندسين
+        
         $engineerRoles = [
             'Architectural Engineer', 'Civil Engineer', 'Structural Engineer', 'Electrical Engineer',
             'Mechanical Engineer', 'Geotechnical Engineer', 'Quantity Surveyor', 'Site Engineer',
@@ -77,19 +72,19 @@ class CustomLogin extends Component
         ];
         foreach ($engineerRoles as $roleName) {
             if ($user->hasRole($roleName)) {
-                session()->flash('status', "مرحباً بك، {$user->first_name}! تم تسجيل دخولك بنجاح.");
-                return redirect()->intended('/engineer'); // توجيه جميع المهندسين إلى /engineer
+                return redirect('/engineer');
             }
         }
-        // لمقدم طلب/اقتراح خدمة
+        
         if ($user->hasRole('Service Proposer')) {
-            session()->flash('status', "مرحباً بك، {$user->first_name}! تم تسجيل دخولك بنجاح.");
-            return redirect()->intended('/service-proposer');
+            return redirect('/service-proposer');
         }
 
-        //Fallback: إذا لم يتطابق أي دور (وهذا لا ينبغي أن يحدث في تطبيق منظم)
-       // return redirect()->intended('/admin'); // توجيه Admin كـ fallback نهائي
+        // Fallback: إذا لم يتطابق أي دور، قم بتوجيه إلى لوحة تحكم افتراضية
+        // هذا يجب أن يكون نادراً إذا كانت جميع الأدوار مغطاة
+        return redirect('/'); // توجيه لصفحة البداية، والتي يجب أن توجهه للدخول إن لم يكن لديه دور
     }
+
 
     public function render()
     {
