@@ -76,8 +76,8 @@ class CvResource extends Resource
                                      ->orWhere('last_name', 'like', "%{$search}%")
                                      ->orWhere('email', 'like', "%{$search}%")
                         )
-                    )
-                    ->sortable(),
+            ),
+                    // ->sortable(),
                 Tables\Columns\TextColumn::make('experience')
                     ->label('الخبرة')
                     ->searchable()

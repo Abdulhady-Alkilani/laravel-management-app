@@ -166,8 +166,8 @@ class TaskResource extends Resource
                                      ->orWhere('last_name', 'like', "%{$search}%")
                                      ->orWhere('email', 'like', "%{$search}%")
                         )
-                    )
-                    ->sortable(),
+            ),
+                    // ->sortable(),
                 Tables\Columns\TextColumn::make('progress')
                     ->label('التقدم (%)')
                     ->sortable(),

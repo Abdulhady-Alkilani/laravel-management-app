@@ -88,8 +88,8 @@ class CvResource extends Resource
                                      ->orWhere('last_name', 'like', "%{$search}%")
                                      ->orWhere('email', 'like', "%{$search}%")
                         )
-                    ) // <== التعديل الرئيسي هنا
-                    ->sortable(),
+            ), // <== التعديل الرئيسي هنا
+                    // ->sortable(),
                 Tables\Columns\TextColumn::make('experience')
                     ->label('الخبرة')
                     ->limit(50)

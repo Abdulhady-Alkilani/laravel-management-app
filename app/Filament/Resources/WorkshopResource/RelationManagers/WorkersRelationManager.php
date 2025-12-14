@@ -36,7 +36,8 @@ class WorkersRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('first_name')->label('الاسم الأول')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('last_name')->label('الاسم الأخير')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('email')->label('البريد الإلكتروني')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('pivot.assigned_date')->label('تاريخ التعيين')->date()->sortable(),
+                Tables\Columns\TextColumn::make('pivot.assigned_date')->label('تاريخ التعيين')->date(),
+                // ->sortable(),
             ])
             ->filters([
                 //

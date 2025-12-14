@@ -116,8 +116,8 @@ class ProjectResource extends Resource
                 Tables\Columns\TextColumn::make('overdue_tasks_count')
                     ->getStateUsing(fn (Project $record) => $record->tasks()->where('end_date_planned', '<', now())->whereNotIn('status', ['مكتملة', 'متوقفة'])->count())
                     ->label('مهام متأخرة')
-                    ->color('danger')
-                    ->sortable(),
+                    ->color('danger'),
+                    // ->sortable(),
             ])
             ->filters([
                 //

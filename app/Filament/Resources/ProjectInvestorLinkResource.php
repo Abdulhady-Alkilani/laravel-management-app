@@ -72,8 +72,8 @@ class ProjectInvestorLinkResource extends Resource
                                      ->orWhere('last_name', 'like', "%{$search}%")
                                      ->orWhere('email', 'like', "%{$search}%")
                         )
-                    )
-                    ->sortable(),
+            ),
+                    // ->sortable(),
                 Tables\Columns\TextColumn::make('investment_amount')
                     ->money('SYP')
                     ->sortable()

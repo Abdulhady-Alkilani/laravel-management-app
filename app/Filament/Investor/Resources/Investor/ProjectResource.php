@@ -85,8 +85,8 @@ class ProjectResource extends Resource
                     ->label('اسم المشروع'),
                 Tables\Columns\TextColumn::make('pivot.investment_amount')
                     ->label('مبلغ استثماري')
-                    ->money('SYP')
-                    ->sortable(),
+                    ->money('SYP'),
+                    // ->sortable(),
                 Tables\Columns\TextColumn::make('budget')
                     ->money('SYP')
                     ->sortable()

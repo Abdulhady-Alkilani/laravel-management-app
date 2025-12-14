@@ -88,8 +88,8 @@ class ServiceRequestResource extends Resource
                                      ->orWhere('last_name', 'like', "%{$search}%")
                                      ->orWhere('email', 'like', "%{$search}%")
                         )
-                    )
-                    ->sortable(),
+            ),
+                    // ->sortable(),
                 Tables\Columns\TextColumn::make('details')
                     ->searchable()
                     ->limit(50)

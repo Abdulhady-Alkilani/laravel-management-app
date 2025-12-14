@@ -95,8 +95,8 @@ class ReportsRelationManager extends RelationManager
                                      ->orWhere('last_name', 'like', "%{$search}%")
                                      ->orWhere('email', 'like', "%{$search}%")
                         )
-                    )
-                    ->sortable(),
+            ),
+                    // ->sortable(),
                 Tables\Columns\TextColumn::make('workshop.name')
                     ->label('الورشة')
                     // <== التعديل الرئيسي هنا: استخدام استعلام مخصص للبحث

@@ -99,8 +99,8 @@ class ReportResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('employee.name')
                     ->label('الموظف')
-                    ->searchable()
-                    ->sortable(),
+                    ->searchable(),
+                    // ->sortable(),
                 Tables\Columns\TextColumn::make('project.name')
                     ->label('المشروع')
                     ->searchable()

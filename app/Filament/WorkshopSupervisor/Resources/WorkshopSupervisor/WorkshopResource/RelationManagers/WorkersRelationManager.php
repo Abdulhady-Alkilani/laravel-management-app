@@ -40,8 +40,8 @@ class WorkersRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('email')->label('البريد الإلكتروني')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('pivot.assigned_date')
                     ->label('تاريخ التعيين')
-                    ->date()
-                    ->sortable(),
+                    ->date(),
+                    // ->sortable(),
             ])
             ->filters([
                 //
