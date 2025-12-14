@@ -68,7 +68,10 @@ class CustomLogin extends Component
         $engineerRoles = [
             'Architectural Engineer', 'Civil Engineer', 'Structural Engineer', 'Electrical Engineer',
             'Mechanical Engineer', 'Geotechnical Engineer', 'Quantity Surveyor', 'Site Engineer',
-            'Environmental Engineer', 'Surveying Engineer'
+            'Environmental Engineer', 'Surveying Engineer',
+            'Information Technology Engineer', // <== إضافة الدور الجديد
+            'Telecommunications Engineer',    // <== إضافة الدور الجديد
+
         ];
         foreach ($engineerRoles as $roleName) {
             if ($user->hasRole($roleName)) {

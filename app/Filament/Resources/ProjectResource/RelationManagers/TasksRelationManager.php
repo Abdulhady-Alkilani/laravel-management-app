@@ -81,6 +81,7 @@ class TasksRelationManager extends RelationManager
             ->columns([
                 Tables\Columns\TextColumn::make('description')
                     ->searchable()
+                    ->html()
                     ->limit(50)
                     ->label('الوصف'),
                 Tables\Columns\TextColumn::make('workshop.name')

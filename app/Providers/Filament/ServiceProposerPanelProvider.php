@@ -28,7 +28,7 @@ class ServiceProposerPanelProvider extends PanelProvider
             // ->login() // نستخدم صفحة تسجيل الدخول المشتركة
             //->defaultAclantLocale('ar')
             //->rtl()
-            ->brandLogo(asset('images/logo.png'))
+            ->brandLogo(asset('images/logos.png'))
             //->brandLogo(asset('images/logo.png')->width(120))
             ->brandName('لوحة خدماتي')
             ->colors([
@@ -48,6 +48,7 @@ class ServiceProposerPanelProvider extends PanelProvider
                 \App\Filament\ServiceProposer\Widgets\LatestProposalsList::class,   // <== ويدجت المقترحات
             
             ])
+            ->favicon('images\logos.png')
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

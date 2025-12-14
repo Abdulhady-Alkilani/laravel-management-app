@@ -48,7 +48,7 @@ class AdminPanelProvider extends PanelProvider
                 'logout' => MenuItem::make()->label('تسجيل الخروج')
             ])
             ->font('Poppins')
-            ->favicon('images\logo.png')
+            ->favicon('images\logos.png')
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

@@ -95,6 +95,18 @@ class UserSeeder extends Seeder
                 'roles' => ['Structural Engineer']
             ],
             [
+                'first_name' => 'فادي', 'last_name' => 'المعلوماتية', 'email' => 'fadi.it@app.com', 'username' => 'fadi.it',
+                'password' => Hash::make('password'), 'gender' => 'male', 'address' => 'قسم تكنولوجيا المعلومات',
+                'nationality' => 'أردني', 'phone_number' => '00962791234567', 'profile_details' => 'مهندس معلوماتية متخصص في تطوير الأنظمة.',
+                'roles' => ['Information Technology Engineer']
+            ],
+            [
+                'first_name' => 'سمية', 'last_name' => 'الاتصالات', 'email' => 'sumaya.tele@app.com', 'username' => 'sumaya.tele',
+                'password' => Hash::make('password'), 'gender' => 'female', 'address' => 'قسم الاتصالات، الشركة',
+                'nationality' => 'عمانية', 'phone_number' => '0096892345678', 'profile_details' => 'مهندسة اتصالات خبيرة في الشبكات.',
+                'roles' => ['Telecommunications Engineer']
+            ],
+            [
                 'first_name' => 'هدى', 'last_name' => 'الكهربائية', 'email' => 'huda.e@app.com', 'username' => 'huda.electrical',
                 'password' => Hash::make('password'), 'gender' => 'female', 'address' => 'قسم الكهرباء، المدينة',
                 'nationality' => 'مغربية', 'phone_number' => '00212612345678', 'profile_details' => 'مهندسة كهربائية خبيرة بأنظمة الطاقة.',

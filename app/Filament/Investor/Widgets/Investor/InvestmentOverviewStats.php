@@ -30,7 +30,7 @@ class InvestmentOverviewStats extends BaseWidget
                 ->description('عدد المشاريع التي قمت بتمويلها')
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('primary'),
-            Stat::make('إجمالي مبلغ الاستثمار', number_format($totalInvestmentAmount, 2) . ' SAR')
+            Stat::make('إجمالي مبلغ الاستثمار', number_format($totalInvestmentAmount, 2) . 'SYP')
                 ->description('إجمالي استثماراتك في المشاريع')
                 ->descriptionIcon('heroicon-m-currency-dollar')
                 ->color('success'),

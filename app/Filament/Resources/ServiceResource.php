@@ -57,6 +57,7 @@ class ServiceResource extends Resource
                     ->searchable()
                     ->limit(50)
                     ->toggleable(isToggledHiddenByDefault: true)
+                    ->html()
                     ->label('الوصف'),
                 Tables\Columns\TextColumn::make('status')
                     ->label('الحالة')

@@ -28,7 +28,7 @@ class WorkshopSupervisorPanelProvider extends PanelProvider
             // ->login() // نستخدم صفحة تسجيل الدخول المشتركة
             //->defaultAclantLocale('ar')
             //->rtl()
-            ->brandLogo(asset('images/logo.png'))
+            ->brandLogo(asset('images/logos.png'))
             //->brandLogo(asset('images/logo.png')->width(120))
             ->brandName('لوحة تحكم مشرف الورشة')
             ->colors([
@@ -47,6 +47,7 @@ class WorkshopSupervisorPanelProvider extends PanelProvider
                 \App\Filament\WorkshopSupervisor\Widgets\WorkerProductivityChart::class, // <== ويدجت الرسم البياني
                 // سنضيف ويدجتات مشرف الورشة المخصصة هنا لاحقاً
             ])
+            ->favicon('images\logos.png')
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

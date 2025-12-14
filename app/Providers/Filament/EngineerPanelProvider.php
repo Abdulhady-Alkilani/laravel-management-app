@@ -28,7 +28,7 @@ class EngineerPanelProvider extends PanelProvider
             // ->login() // نستخدم صفحة تسجيل الدخول المشتركة
             //->defaultAclantLocale('ar')
             //->rtl()
-            ->brandLogo(asset('images/logo.png'))
+            ->brandLogo(asset('images/logos.png'))
             //->brandLogo(asset('images/logo.png')->width(120))
             ->brandName('لوحة تحكم المهندس')
             ->colors([
@@ -49,6 +49,7 @@ class EngineerPanelProvider extends PanelProvider
                 \App\Filament\Engineer\Widgets\MyRecentReports::class,            // <== ويدجت التقارير
             
             ])
+            ->favicon('images\logos.png')
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

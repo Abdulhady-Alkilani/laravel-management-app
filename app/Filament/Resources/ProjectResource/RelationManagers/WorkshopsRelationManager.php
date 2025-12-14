@@ -34,7 +34,7 @@ class WorkshopsRelationManager extends RelationManager
             ->recordTitleAttribute('name')
             ->columns([
                 Tables\Columns\TextColumn::make('name')->label('اسم الورشة')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('description')->label('الوصف')->limit(50),
+                Tables\Columns\TextColumn::make('description')->label('الوصف')->limit(50)->html(),
                 Tables\Columns\TextColumn::make('workers_count')->counts('workers')->label('عدد العمال'),
                 Tables\Columns\TextColumn::make('tasks_count')->counts('tasks')->label('عدد المهام'),
             ])

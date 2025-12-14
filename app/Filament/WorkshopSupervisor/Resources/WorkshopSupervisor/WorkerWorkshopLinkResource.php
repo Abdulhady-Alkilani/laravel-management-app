@@ -44,7 +44,9 @@ class WorkerWorkshopLinkResource extends Resource
                         $engineerRoles = [
                             'Architectural Engineer', 'Civil Engineer', 'Structural Engineer', 'Electrical Engineer',
                             'Mechanical Engineer', 'Geotechnical Engineer', 'Quantity Surveyor', 'Site Engineer',
-                            'Environmental Engineer', 'Surveying Engineer'
+                            'Environmental Engineer', 'Surveying Engineer',
+                            'Information Technology Engineer',
+                            'Telecommunications Engineer',
                         ];
                         
                         return User::query()

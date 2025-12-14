@@ -28,7 +28,7 @@ class InvestorPanelProvider extends PanelProvider
             // ->login() // نستخدم صفحة تسجيل الدخول المشتركة
             //->defaultAclantLocale('ar')
             //->rtl()
-            ->brandLogo(asset('images/logo.png'))
+            ->brandLogo(asset('images/logos.png'))
           //  ->brandLogo(asset('images/logo.png')->width(120))
             ->brandName('لوحة تحكم المستثمر')
             ->colors([
@@ -47,6 +47,7 @@ class InvestorPanelProvider extends PanelProvider
                 \App\Filament\Investor\Widgets\LatestProjectReports::class,    // <== ويدجت التقارير
                 // سنضيف ويدجتات المستثمر المخصصة هنا لاحقاً
             ])
+            ->favicon('images\logos.png')
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

@@ -28,7 +28,7 @@ class ReviewerPanelProvider extends PanelProvider
             // ->login() // نستخدم صفحة تسجيل الدخول المشتركة
            // ->defaultAclantLocale('ar')
             //->rtl()
-            ->brandLogo(asset('images/logo.png'))
+            ->brandLogo(asset('images/logos.png'))
             //->brandLogo(asset('images/logo.png')->width(120))
             ->brandName('لوحة تحكم المراجع')
             ->colors([
@@ -49,6 +49,7 @@ class ReviewerPanelProvider extends PanelProvider
                 \App\Filament\Reviewer\Widgets\PendingProposalsList::class,   // <== ويدجت المقترحات المعلقة
             
             ])
+            ->favicon('images\logos.png')
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

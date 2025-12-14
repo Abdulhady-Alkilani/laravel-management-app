@@ -78,6 +78,7 @@ class ServiceRequestResource extends Resource
                 Tables\Columns\TextColumn::make('details')
                     ->searchable()
                     ->limit(50)
+                    ->html()
                     ->label('التفاصيل'),
                 Tables\Columns\TextColumn::make('request_date')
                     ->date()

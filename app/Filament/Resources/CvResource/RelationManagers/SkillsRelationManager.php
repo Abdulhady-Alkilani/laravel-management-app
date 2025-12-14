@@ -33,7 +33,7 @@ class SkillsRelationManager extends RelationManager
             ->recordTitleAttribute('name')
             ->columns([
                 Tables\Columns\TextColumn::make('name')->label('اسم المهارة')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('description')->label('الوصف')->limit(50),
+                Tables\Columns\TextColumn::make('description')->label('الوصف')->limit(50)->html(),
             ])
             ->filters([
                 //

@@ -47,7 +47,7 @@ class ProjectStatsOverview extends BaseWidget
                 ->description('مهام تجاوزت تاريخ الانتهاء')
                 ->descriptionIcon('heroicon-m-clock')
                 ->color('danger'),
-            Stat::make('إجمالي الميزانية (قيد التنفيذ)', number_format($totalBudget, 2) . ' SAR')
+            Stat::make('إجمالي الميزانية (قيد التنفيذ)', number_format($totalBudget, 2) . ' SYP')
                 ->description('للمشاريع التي تديرها حالياً')
                 ->descriptionIcon('heroicon-m-currency-dollar')
                 ->color('warning'),

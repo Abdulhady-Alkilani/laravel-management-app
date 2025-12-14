@@ -41,43 +41,44 @@
             @csrf
 
             <fieldset class="mb-4 p-3 border rounded">
-                <legend class="float-none w-auto px-2 fs-5">البيانات الشخصية والخبرات</legend>
-
-                {{-- تم إزالة حقل "نبذة عنك (تفاصيل الملف الشخصي)" من هنا --}}
+                <legend class="float-none w-auto px-2 fs-5">مهاراتك ومؤهلاتك التعليمية</legend>
 
                 <div class="mb-3">
-                    <label for="experience" class="form-label">الخبرات المهنية <span class="text-danger">*</span></label>
-                    <textarea class="form-control" id="experience" name="experience" rows="5" placeholder="اذكر خبراتك المهنية السابقة بدءًا من الأحدث، مع ذكر اسم الشركة، المسمى الوظيفي، وفترة العمل، وأبرز الإنجازات.">{{ old('experience', $applicationData['step4']['experience'] ?? '') }}</textarea>
-                    <div class="form-text">مثال: مهندس موقع في شركة [اسم الشركة] من 2020-2024، أشرفت على مشروع [اسم المشروع] بنجاح.</div>
+                    <label class="form-label">اختر مهاراتك من القائمة</label>
+                    <div class="row">
+                        @foreach($skills as $skill)
+                            <div class="col-sm-6 col-12">
+                                <div class="form-check">
+                                    <input class="form-check-input @error('selected_skills') is-invalid @enderror" type="checkbox" name="selected_skills[]" id="skill_{{ $skill->id }}" value="{{ $skill->id }}"
+                                           {{ in_array($skill->id, old('selected_skills', $applicationData['step4']['selected_skills'] ?? [])) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="skill_{{ $skill->id }}">
+                                        {{ $skill->name }}
+                                    </label>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    @error('selected_skills') <div class="text-danger mt-1">{{ $message }}</div> @enderror
+                    @error('selected_skills.*') <div class="text-danger mt-1">{{ $message }}</div> @enderror
+                </div>
+
+                <div class="mb-3">
+                    <label for="new_skill" class="form-label">أضف مهارة جديدة (إن وجدت)</label>
+                    <input type="text" class="form-control @error('new_skill') is-invalid @enderror" id="new_skill" name="new_skill" value="{{ old('new_skill', $applicationData['step4']['new_skill'] ?? '') }}" placeholder="مثال: تحليل البيانات">
+                    <div class="form-text">إذا كانت لديك مهارة غير موجودة في القائمة أعلاه، يمكنك إضافتها هنا.</div>
+                    @error('new_skill') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
                 <div class="mb-3">
                     <label for="education" class="form-label">المؤهلات العلمية والدورات التدريبية <span class="text-danger">*</span></label>
-                    <textarea class="form-control" id="education" name="education" rows="5" placeholder="اذكر شهاداتك الأكاديمية (بكالوريوس، دبلوم، ثانوية)، والمؤسسة التعليمية، وسنة التخرج. بالإضافة إلى أي دورات تدريبية متخصصة أو شهادات مهنية حصلت عليها.">{{ old('education', $applicationData['step4']['education'] ?? '') }}</textarea>
+                    <textarea class="form-control @error('education') is-invalid @enderror" id="education" name="education" rows="5" placeholder="اذكر شهاداتك الأكاديمية (بكالوريوس، دبلوم، ثانوية)، والمؤسسة التعليمية، وسنة التخرج. بالإضافة إلى أي دورات تدريبية متخصصة أو شهادات مهنية حصلت عليها.">{{ old('education', $applicationData['step4']['education'] ?? '') }}</textarea>
                     <div class="form-text">مثال: بكالوريوس هندسة مدنية - جامعة دمشق 2019، دورة سلامة مهنية OSHA 2021.</div>
+                    @error('education') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
-            </fieldset>
-
-            <fieldset class="mb-4 p-3 border rounded">
-                <legend class="float-none w-auto px-2 fs-5">مهاراتك</legend>
-
-                <div class="mb-3">
-                    <label for="selected_skills" class="form-label">اختر مهاراتك من القائمة</label>
-                    <select class="form-select" id="selected_skills" name="selected_skills[]" multiple>
-                        <option value="">-- اختر مهارة أو أكثر --</option>
-                        @foreach($skills as $skill)
-                            <option value="{{ $skill->id }}" {{ in_array($skill->id, old('selected_skills', $applicationData['step4']['selected_skills'] ?? [])) ? 'selected' : '' }}>
-                                {{ $skill->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                    <div class="form-text">يمكنك اختيار عدة مهارات بالضغط على مفتاح Ctrl (أو Command في Mac) أثناء النقر.</div>
-                </div>
-
-                {{-- تم إزالة حقل "أضف مهارات جديدة (إن وجدت)" من هنا --}}
             </fieldset>
 
             <div class="d-grid">
+                <a href="{{ route('employee.apply.step3') }}" class="btn btn-secondary btn-lg mb-3">السابق</a>
                 <button type="submit" class="btn btn-primary btn-lg">إرسال طلب التوظيف</button>
             </div>
         </form>

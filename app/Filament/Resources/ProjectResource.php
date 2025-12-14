@@ -85,7 +85,7 @@ class ProjectResource extends Resource
                     ->searchable(['first_name', 'last_name', 'email'])
                     ->sortable(),
                 Tables\Columns\TextColumn::make('budget')
-                    ->money('SAR') // عرض كعملة سعودية
+                    ->money('SY') // عرض كعملة
                     ->sortable()
                     ->label('الميزانية'),
                 Tables\Columns\TextColumn::make('status')

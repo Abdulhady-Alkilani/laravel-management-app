@@ -52,13 +52,15 @@
 
                 <div class="mb-3">
                     <label for="password" class="form-label">كلمة المرور <span class="text-danger">*</span></label>
-                    <input type="password" class="form-control" id="password" name="password" required>
+                    <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password" required>
                     <div class="form-text">يجب أن تكون كلمة المرور قوية (8 أحرف على الأقل، تتضمن حروفًا كبيرة وصغيرة، أرقامًا، ورموزًا خاصة).</div>
+                    @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
                 <div class="mb-3">
                     <label for="password_confirmation" class="form-label">تأكيد كلمة المرور <span class="text-danger">*</span></label>
-                    <input type="password" class="form-control" id="password_confirmation" name="password_confirmation" required>
+                    <input type="password" class="form-control @error('password_confirmation') is-invalid @enderror" id="password_confirmation" name="password_confirmation" required>
                     <div class="form-text">الرجاء إعادة إدخال كلمة المرور للتأكيد.</div>
+                    @error('password_confirmation') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
                 <hr class="my-4">
@@ -66,36 +68,62 @@
                 <div class="row mb-3">
                     <div class="col-md-6 col-12 mb-3 mb-md-0">
                         <label for="gender" class="form-label">الجنس</label>
-                        <select class="form-select" id="gender" name="gender">
+                        <select class="form-select @error('gender') is-invalid @enderror" id="gender" name="gender">
                             <option value="">اختر الجنس</option>
                             <option value="male" {{ (old('gender', $applicationData['step3']['gender'] ?? '') == 'male') ? 'selected' : '' }}>ذكر</option>
                             <option value="female" {{ (old('gender', $applicationData['step3']['gender'] ?? '') == 'female') ? 'selected' : '' }}>أنثى</option>
                         </select>
                         <div class="form-text">مساعدتنا على فهم التركيبة السكانية لمقدمي الطلبات.</div>
+                        @error('gender') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
                     <div class="col-md-6 col-12">
                         <label for="nationality" class="form-label">الجنسية</label>
-                        <input type="text" class="form-control" id="nationality" name="nationality" value="{{ old('nationality', $applicationData['step3']['nationality'] ?? '') }}">
-                        <div class="form-text">الرجاء إدخال جنسيتك (مثال: سوري، مصري، أردني).</div>
+                        <select class="form-select @error('nationality') is-invalid @enderror" id="nationality" name="nationality">
+                            <option value="">اختر جنسيتك</option>
+                            @foreach($countries as $country)
+                                <option value="{{ $country }}" {{ (old('nationality', $applicationData['step3']['nationality'] ?? '') == $country) ? 'selected' : '' }}>
+                                    {{ $country }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <div class="form-text">الرجاء اختيار جنسيتك.</div>
+                        @error('nationality') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
                 </div>
 
                 <div class="mb-3">
                     <label for="address" class="form-label">العنوان</label>
-                    <input type="text" class="form-control" id="address" name="address" value="{{ old('address', $applicationData['step3']['address'] ?? '') }}">
+                    <input type="text" class="form-control @error('address') is-invalid @enderror" id="address" name="address" value="{{ old('address', $applicationData['step3']['address'] ?? '') }}">
                     <div class="form-text">عنوان إقامتك الحالي بالكامل (مثال: حماة، حي الفداء، شارع العروبة، بناء رقم 12).</div>
+                    @error('address') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
                 <div class="mb-3">
                     <label for="phone_number" class="form-label">رقم الهاتف</label>
-                    <input type="text" class="form-control" id="phone_number" name="phone_number" value="{{ old('phone_number', $applicationData['step3']['phone_number'] ?? '') }}">
+                    <input type="text" class="form-control @error('phone_number') is-invalid @enderror" id="phone_number" name="phone_number" value="{{ old('phone_number', $applicationData['step3']['phone_number'] ?? '') }}">
                     <div class="form-text">رقم هاتفك المحمول للتواصل السريع والضروري (مثال: 0930123456).</div>
+                    @error('phone_number') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+
+                <div class="mb-3">
+                    <label for="years_of_experience_summary" class="form-label">سنوات الخبرة <span class="text-danger">*</span></label>
+                    <select class="form-select @error('years_of_experience_summary') is-invalid @enderror" id="years_of_experience_summary" name="years_of_experience_summary" required>
+                        <option value="">اختر سنوات الخبرة</option>
+                        @foreach($experienceOptions as $key => $label)
+                            <option value="{{ $key }}" {{ (old('years_of_experience_summary', $applicationData['step3']['years_of_experience_summary'] ?? '') == $key) ? 'selected' : '' }}>
+                                {{ $label }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <div class="form-text">تحديد مجال خبرتك يساعدنا على فهم مدى ملاءمتك للوظيفة.</div>
+                    @error('years_of_experience_summary') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
                 <div class="mb-3">
                     <label for="profile_details" class="form-label">نبذة عنك (تفاصيل الملف الشخصي)</label>
-                    <textarea class="form-control" id="profile_details" name="profile_details" rows="3">{{ old('profile_details', $applicationData['step3']['profile_details'] ?? '') }}</textarea>
+                    <textarea class="form-control @error('profile_details') is-invalid @enderror" id="profile_details" name="profile_details" rows="3">{{ old('profile_details', $applicationData['step3']['profile_details'] ?? '') }}</textarea>
                     <div class="form-text">شاركنا نبذة مختصرة عن خلفيتك المهنية، اهتماماتك، أو أي معلومات إضافية ترى أنها مهمة وتدعم طلبك (مثال: مهندس مدني بخبرة 5 سنوات في مشاريع البناء، متحمس للعمل ضمن فريق).</div>
+                    @error('profile_details') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
             </fieldset>
 

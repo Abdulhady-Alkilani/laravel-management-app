@@ -3,7 +3,6 @@
 namespace App\Filament\Engineer\Resources\Engineer;
 
 use App\Filament\Engineer\Resources\Engineer\ReportResource\Pages;
-use App\Filament\Engineer\Resources\Engineer\ReportResource\RelationManagers;
 use App\Models\Report;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -13,12 +12,14 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\RichEditor;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Project;
+use App\Models\Workshop;
 
 class ReportResource extends Resource
 {
     protected static ?string $model = Report::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list'; // أيقونة صحيحة وموجودة
+    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
     protected static ?string $navigationLabel = 'تقاريري';
     protected static ?string $pluralModelLabel = 'تقاريري';
     protected static ?string $modelLabel = 'تقرير';
@@ -28,39 +29,62 @@ class ReportResource extends Resource
         return parent::getEloquentQuery()->where('employee_id', Auth::id());
     }
 
-    // <== المهندس يمكنه إنشاء، عرض، تعديل (محتوى التقرير فقط)، حذف تقاريره
     protected static bool $canCreate = true;
     protected static bool $canEdit = true;
     protected static bool $canDelete = true;
 
     public static function form(Form $form): Form
     {
+        $engineerId = Auth::id();
+
         return $form
             ->schema([
                 Forms\Components\Hidden::make('employee_id')
-                    ->default(Auth::id())
+                    ->default($engineerId)
                     ->dehydrated(true),
                 Forms\Components\Placeholder::make('employee_info')
                     ->content(fn () => Auth::user()->name)
                     ->label('الموظف مقدم التقرير'),
+
                 Forms\Components\Select::make('project_id')
-                    ->relationship('project', 'name', fn (Builder $query) => $query->whereHas('tasks', fn ($subQuery) => $subQuery->where('assigned_to_user_id', Auth::id())))
+                    ->relationship('project', 'name', fn (Builder $query, Forms\Get $get) => // <== إضافة Forms\Get $get
+                        $query->whereHas('tasks', fn ($subQuery) => $subQuery->where('assigned_to_user_id', $engineerId))
+                              // <== التعديل الرئيسي هنا: تصفية المشاريع بناءً على الورشة المختارة (إذا وجدت)
+                              ->when($get('workshop_id'), fn (Builder $query, $workshopId) => 
+                                  $query->whereHas('workshops', fn ($q) => $q->where('id', $workshopId))
+                              )
+                    )
+                    ->getOptionLabelFromRecordUsing(fn (Project $record) => $record->name)
                     ->searchable()
                     ->preload()
                     ->nullable()
+                    ->live() // <== مهم جداً لتشغيل التحديث الديناميكي
+                    // <== تم حذف ->afterStateUpdated(fn (Forms\Set $set) => $set('workshop_id', null))
                     ->label('المشروع'),
+
                 Forms\Components\Select::make('workshop_id')
-                    ->relationship('workshop', 'name', fn (Builder $query) => $query->whereHas('tasks', fn ($subQuery) => $subQuery->where('assigned_to_user_id', Auth::id())))
+                    ->relationship('workshop', 'name', fn (Builder $query, Forms\Get $get) => // <== إضافة Forms\Get $get
+                        $query->whereHas('tasks', fn ($subQuery) => $subQuery->where('assigned_to_user_id', $engineerId))
+                              // <== التعديل الرئيسي هنا: تصفية الورش بناءً على المشروع المختار (إذا وجد)
+                              ->when($get('project_id'), fn (Builder $query, $projectId) => 
+                                  $query->where('project_id', $projectId)
+                              )
+                    )
+                    ->getOptionLabelFromRecordUsing(fn (Workshop $record) => $record->name)
                     ->searchable()
                     ->preload()
                     ->nullable()
+                    ->live() // <== مهم جداً لتشغيل التحديث الديناميكي
+                    // <== تم حذف ->afterStateUpdated(fn (Forms\Set $set) => $set('project_id', null))
                     ->label('الورشة'),
+
                 Forms\Components\Select::make('service_id')
                     ->relationship('service', 'name')
                     ->searchable()
                     ->preload()
                     ->nullable()
                     ->label('الخدمة'),
+
                 Forms\Components\TextInput::make('report_type')
                     ->required()
                     ->maxLength(255)
@@ -69,14 +93,14 @@ class ReportResource extends Resource
                     ->columnSpanFull()
                     ->nullable()
                     ->label('تفاصيل التقرير'),
-                // <== هنا التعديل: إخفاء حقل report_status وجعله معلقاً دائماً
-                Forms\Components\Hidden::make('report_status') // <== إخفاء الحقل
-                    ->default('معلقة') // <== القيمة الافتراضية دائماً معلقة
-                    ->dehydrated(true), // <== تأكد من حفظ القيمة
+                
+                Forms\Components\Hidden::make('report_status')
+                    ->default('معلقة')
+                    ->dehydrated(true),
                 Forms\Components\Placeholder::make('current_report_status')
                     ->content(fn (?Report $record) => $record?->report_status ?? 'معلقة')
                     ->label('حالة التقرير')
-                    ->visibleOn('edit'), // <== يظهر كـ Placeholder في صفحة التعديل فقط
+                    ->visibleOn('edit'),
             ]);
     }
 
@@ -90,9 +114,19 @@ class ReportResource extends Resource
                     ->label('نوع التقرير'),
                 Tables\Columns\TextColumn::make('project.name')
                     ->label('المشروع')
+                    ->searchable(query: fn (Builder $query, string $search) => 
+                        $query->whereHas('project', fn (Builder $subQuery) => 
+                            $subQuery->where('name', 'like', "%{$search}%")
+                        )
+                    )
                     ->sortable(),
                 Tables\Columns\TextColumn::make('workshop.name')
                     ->label('الورشة')
+                    ->searchable(query: fn (Builder $query, string $search) => 
+                        $query->whereHas('workshop', fn (Builder $subQuery) => 
+                            $subQuery->where('name', 'like', "%{$search}%")
+                        )
+                    )
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()

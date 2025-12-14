@@ -58,7 +58,7 @@ class ProjectInvestorLinkResource extends Resource
                     ->sortable()
                     ->label('المستثمر'),
                 Tables\Columns\TextColumn::make('investment_amount')
-                    ->money('SAR')
+                    ->money('SYP')
                     ->sortable()
                     ->label('مبلغ الاستثمار'),
                 Tables\Columns\TextColumn::make('created_at')

@@ -86,7 +86,7 @@ class ProjectResource extends Resource
                     ->sortable()
                     ->label('اسم المشروع'),
                 Tables\Columns\TextColumn::make('budget')
-                    ->money('SAR')
+                    ->money('SYP')
                     ->sortable()
                     ->label('الميزانية'),
                 Tables\Columns\TextColumn::make('status')

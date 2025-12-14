@@ -20,6 +20,8 @@ class CvSeeder extends Seeder
         $lana = User::where('username', 'lana.architect')->first();
         $mazen = User::where('username', 'mazen.civil')->first();
         $samir = User::where('username', 'samir.structural')->first();
+        $fadi = User::where('username', 'fadi.it')->first();
+        $sumaya = User::where('username', 'sumaya.tele')->first();
 
         // جلب بعض المهارات لربطها
         $concreteWorkSkill = Skill::where('name', 'أعمال الخرسانة المسلحة')->first();
@@ -31,6 +33,10 @@ class CvSeeder extends Seeder
         $cadSkill = Skill::where('name', 'برامج CAD')->first();
         $safetySkill = Skill::where('name', 'صحة وسلامة مهنية')->first(); // هذا هو المتغير المشتبه به
         $projectManagementSkill = Skill::where('name', 'إدارة مشاريع البناء')->first();
+        $softwareDevelopmentSkill = Skill::where('name', 'تطوير البرمجيات')->firstOrCreate(['name' => 'تطوير البرمجيات']);
+        $networkAdminSkill = Skill::where('name', 'إدارة الشبكات')->firstOrCreate(['name' => 'إدارة الشبكات']);
+        $telecomProtocolsSkill = Skill::where('name', 'بروتوكولات الاتصالات')->firstOrCreate(['name' => 'بروتوكولات الاتصالات']);
+
 
         // ----------------------------------------------------------------------
         // DEBUGGING: إضافة رسائل تصحيح للتحقق من وجود المهارات
@@ -48,6 +54,9 @@ class CvSeeder extends Seeder
         if (!$cadSkill) $this->command->error('CvSeeder DEBUG: Skill "برامج CAD" not found!');
         if (!$projectManagementSkill) $this->command->error('CvSeeder DEBUG: Skill "إدارة مشاريع البناء" not found!');
         if (!$siteSupervisionSkill) $this->command->error('CvSeeder DEBUG: Skill "إشراف ميداني" not found!');
+        if (!$fadi) $this->command->error('CvSeeder DEBUG: User fadi.it not found!');
+        if (!$sumaya) $this->command->error('CvSeeder DEBUG: User sumaya.tele not found!');
+
 
         // ----------------------------------------------------------------------
 
@@ -72,6 +81,36 @@ class CvSeeder extends Seeder
         } else {
              $this->command->error('CvSeeder DEBUG: Could not create CV for Khalid due to missing dependencies.');
         }
+
+
+                // CV for Fadi (Information Technology Engineer)
+        if ($fadi && $softwareDevelopmentSkill && $networkAdminSkill) {
+            $cvFadi = Cv::firstOrCreate(
+                ['user_id' => $fadi->id],
+                [
+                    'profile_details' => 'مهندس معلوماتية متخصص في تطوير الويب وإدارة قواعد البيانات، خبرة 4 سنوات.',
+                    'experience' => '4 سنوات خبرة في تطوير أنظمة ERP، وصيانة خوادم.',
+                    'education' => 'بكالوريوس هندسة معلوماتية، جامعة حلب 2020.',
+                    'cv_status' => 'تمت الموافقة',
+                ]
+            );
+            $cvFadi->skills()->syncWithoutDetaching([$softwareDevelopmentSkill->id, $networkAdminSkill->id]);
+        } else { $this->command->error('CvSeeder DEBUG: Could not create CV for Fadi due to missing dependencies.'); }
+
+        // CV for Sumaya (Telecommunications Engineer)
+        if ($sumaya && $telecomProtocolsSkill && $networkAdminSkill) {
+            $cvSumaya = Cv::firstOrCreate(
+                ['user_id' => $sumaya->id],
+                [
+                    'profile_details' => 'مهندسة اتصالات بخبرة في تصميم وتطوير شبكات الاتصالات اللاسلكية، خبرة 3 سنوات.',
+                    'experience' => '3 سنوات خبرة في شركة اتصالات، تخطيط شبكات 5G.',
+                    'education' => 'بكالوريوس هندسة اتصالات، جامعة تشرين 2021.',
+                    'cv_status' => 'تمت الموافقة',
+                ]
+            );
+            $cvSumaya->skills()->syncWithoutDetaching([$telecomProtocolsSkill->id, $networkAdminSkill->id]);
+        } else { $this->command->error('CvSeeder DEBUG: Could not create CV for Sumaya due to missing dependencies.'); }
+
 
 
         // CV for Nora (Worker - Electrical)

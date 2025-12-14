@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Str;
-use Closure; // لاستخدام Closure في Validation Rules
+use Closure;
 
 class EmployeeApplicationController extends Controller
 {
@@ -18,7 +18,7 @@ class EmployeeApplicationController extends Controller
     {
         do {
             $uuid = Str::uuid();
-            $email = "applicant_{$uuid}@generated.local"; // استخدام نطاق محلي
+            $email = "applicant_{$uuid}@generated.local";
         } while (User::where('email', $email)->exists());
         return $email;
     }
@@ -37,6 +37,53 @@ class EmployeeApplicationController extends Controller
         return $username;
     }
 
+    protected function translateRoleName(string $englishName): string
+    {
+        return [
+            'Manager' => 'مدير مشروع',
+            'Worker' => 'عامل',
+            'Workshop Supervisor' => 'مشرف ورشة',
+            'Reviewer' => 'مراجع',
+            'Architectural Engineer' => 'مهندس معماري',
+            'Civil Engineer' => 'مهندس مدني',
+            'Structural Engineer' => 'مهندس إنشائي',
+            'Electrical Engineer' => 'مهندس كهربائي',
+            'Mechanical Engineer' => 'مهندس ميكانيكي',
+            'Geotechnical Engineer' => 'مهندس جيوتقني',
+            'Quantity Surveyor' => 'مهندس كميات / تكاليف',
+            'Site Engineer' => 'مهندس موقع',
+            'Environmental Engineer' => 'مهندس بيئي',
+            'Surveying Engineer' => 'مهندس مساحة',
+            'Information Technology Engineer' => 'مهندس معلوماتية',
+            'Telecommunications Engineer' => 'مهندس اتصالات',
+            'Investor' => 'مستثمر',
+        ][$englishName] ?? $englishName;
+    }
+
+    // <== دالة مساعدة للحصول على قائمة الدول (يمكن توسيعها من قاعدة بيانات لاحقاً)
+    protected function getCountries(): array
+    {
+        return [
+            'السعودية', 'الإمارات', 'الكويت', 'قطر', 'البحرين', 'عمان', 'اليمن', 'مصر', 'السودان',
+            'ليبيا', 'تونس', 'الجزائر', 'المغرب', 'موريتانيا', 'الصومال', 'جيبوتي', 'جزر القمر',
+            'فلسطين', 'الأردن', 'لبنان', 'سوريا', 'العراق', 'تركيا', 'إيران', 'باكستان', 'الهند',
+            'الصين', 'روسيا', 'الولايات المتحدة', 'كندا', 'المملكة المتحدة', 'ألمانيا', 'فرنسا',
+            'إسبانيا', 'إيطاليا', 'أستراليا', 'نيوزيلندا', 'اليابان', 'كوريا الجنوبية', 'أخرى'
+        ];
+    }
+
+    // <== دالة مساعدة للحصول على خيارات سنوات الخبرة
+    protected function getExperienceOptions(): array
+    {
+        return [
+            'Fresh' => 'فريش (أقل من سنة)',
+            'Less than 5 years' => 'أقل من 5 سنوات',
+            '5 to 10 years' => '5 - 10 سنوات',
+            'More than 10 years' => 'أكثر من 10 سنوات',
+        ];
+    }
+
+
     /**
      * Show the form for Step 1: Basic Info & Role.
      */
@@ -44,19 +91,11 @@ class EmployeeApplicationController extends Controller
     {
         $applicationData = $request->session()->get('employee_application', []);
         
-        // <== جلب أدوار المهندسين والعامل فقط
         $engineerAndWorkerRolesNames = [
             'Worker',
-            'Architectural Engineer',
-            'Civil Engineer',
-            'Structural Engineer',
-            'Electrical Engineer',
-            'Mechanical Engineer',
-            'Geotechnical Engineer',
-            'Quantity Surveyor',
-            'Site Engineer',
-            'Environmental Engineer',
-            'Surveying Engineer'
+            'Architectural Engineer', 'Civil Engineer', 'Structural Engineer', 'Electrical Engineer',
+            'Mechanical Engineer', 'Geotechnical Engineer', 'Quantity Surveyor', 'Site Engineer',
+            'Environmental Engineer', 'Surveying Engineer', 'Information Technology Engineer', 'Telecommunications Engineer',
         ];
         $roles = Role::whereIn('name', $engineerAndWorkerRolesNames)->get();
         $translatedRoles = $roles->map(fn ($role) => ['id' => $role->id, 'name' => $this->translateRoleName($role->name)]);
@@ -72,7 +111,7 @@ class EmployeeApplicationController extends Controller
         $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
-            'role_id' => ['required', 'exists:roles,id'], // <== الدور مطلوب هنا
+            'role_id' => ['required', 'exists:roles,id'],
         ], [
             'first_name.required' => 'الاسم الأول مطلوب.',
             'last_name.required' => 'الاسم الأخير مطلوب.',
@@ -84,7 +123,7 @@ class EmployeeApplicationController extends Controller
         $lastName = $request->input('last_name');
         $generatedUsername = $this->generateUniqueUsername($firstName, $lastName);
 
-        $request->session()->put('employee_application.step1', $request->only(['first_name', 'last_name', 'role_id'])); // <== تخزين الدور
+        $request->session()->put('employee_application.step1', $request->only(['first_name', 'last_name', 'role_id']));
         $request->session()->put('employee_application.generated_username', $generatedUsername);
 
         return redirect()->route('employee.apply.step2');
@@ -145,7 +184,10 @@ class EmployeeApplicationController extends Controller
             return redirect()->route('employee.apply.step1')->with('error', 'الرجاء إكمال الخطوة الأولى أولاً.');
         }
         $applicationData = $request->session()->get('employee_application', []);
-        return view('applications.employee-form-step3', compact('applicationData'));
+        $countries = $this->getCountries(); // <== جلب قائمة الدول
+        $experienceOptions = $this->getExperienceOptions(); // <== جلب خيارات الخبرة
+
+        return view('applications.employee-form-step3', compact('applicationData', 'countries', 'experienceOptions'));
     }
 
     /**
@@ -153,24 +195,28 @@ class EmployeeApplicationController extends Controller
      */
     public function storeStep3(Request $request)
     {
+        $experienceOptionsKeys = array_keys($this->getExperienceOptions()); // لجلب المفاتيح للتحقق
+
         $request->validate([
             'password' => ['required', 'confirmed', Password::defaults()],
             'gender' => ['nullable', 'in:male,female'],
             'address' => ['nullable', 'string', 'max:255'],
-            'nationality' => ['nullable', 'string', 'max:255'],
+            'nationality' => ['nullable', 'string', 'max:255', 'in:' . implode(',', $this->getCountries())], // <== تحقق من الجنسية
             'phone_number' => ['nullable', 'string', 'max:20'],
             'profile_details' => ['nullable', 'string'],
+            'years_of_experience_summary' => ['required', 'string', 'in:' . implode(',', $experienceOptionsKeys)], // <== حقل سنوات الخبرة الجديد
         ], [
             'password.required' => 'كلمة المرور مطلوبة.',
             'password.confirmed' => 'تأكيد كلمة المرور غير متطابق.',
+            'years_of_experience_summary.required' => 'يرجى تحديد سنوات الخبرة.',
+            'years_of_experience_summary.in' => 'قيمة سنوات الخبرة المختارة غير صالحة.',
+            'nationality.in' => 'الجنسية المختارة غير صالحة.',
         ]);
 
         $request->session()->put('employee_application.step3', $request->only([
-            'password',
-            'gender', 'address', 'nationality', 'phone_number', 'profile_details'
+            'password', 'gender', 'address', 'nationality', 'phone_number', 'profile_details', 'years_of_experience_summary' // <== تخزين سنوات الخبرة
         ]));
         $request->session()->put('employee_application.clear_password', $request->input('password'));
-
 
         return redirect()->route('employee.apply.step4');
     }
@@ -196,17 +242,18 @@ class EmployeeApplicationController extends Controller
     {
         $request->validate([
             'selected_skills' => ['nullable', 'array'],
-            'selected_skills.*' => ['exists:skills,id'], // التأكد أن المهارات المختارة موجودة
-            // 'new_skills' تم إزالته من هنا
-            'experience' => ['required', 'string', 'max:2000'],
+            'selected_skills.*' => ['exists:skills,id'],
+            'new_skill' => ['nullable', 'string', 'max:255', 'unique:skills,name'], // <== حقل المهارة الجديدة
             'education' => ['required', 'string', 'max:1000'],
+            // 'experience' تم إزالته من هنا لأنه تم استبداله بـ years_of_experience_summary
         ], [
-            'experience.required' => 'الخبرة مطلوبة لإكمال السيرة الذاتية.',
+            // 'experience.required' => 'الخبرة مطلوبة لإكمال السيرة الذاتية.',
             'education.required' => 'المؤهلات العلمية مطلوبة لإكمال السيرة الذاتية.',
+            'new_skill.unique' => 'هذه المهارة موجودة بالفعل، يرجى اختيارها من القائمة أو إضافة مهارة فريدة.',
         ]);
 
         $request->session()->put('employee_application.step4', $request->only([
-            'selected_skills', /* 'new_skills' تم إزالته */ 'experience', 'education'
+            'selected_skills', 'new_skill', 'education'
         ]));
 
         $allApplicationData = $request->session()->get('employee_application');
@@ -232,7 +279,6 @@ class EmployeeApplicationController extends Controller
             'profile_details' => $step3Data['profile_details'] ?? null,
         ]);
 
-        // <== ربط الدور المختار من الخطوة 1
         $userRole = Role::find($step1Data['role_id']);
         if ($userRole) {
             $user->roles()->attach($userRole->id);
@@ -243,9 +289,9 @@ class EmployeeApplicationController extends Controller
         $cv = Cv::create([
             'user_id' => $user->id,
             'profile_details' => $step3Data['profile_details'] ?? null,
-            'experience' => $cvData['experience'] ?? null,
+            'experience' => $step3Data['years_of_experience_summary'] ?? null, // <== حفظ سنوات الخبرة هنا
             'education' => $cvData['education'] ?? null,
-            'cv_status' => 'قيد الانتظار', // <== دائماً "قيد الانتظار"
+            'cv_status' => 'قيد الانتظار',
             'rejection_reason' => null,
         ]);
 
@@ -253,8 +299,11 @@ class EmployeeApplicationController extends Controller
         if (!empty($cvData['selected_skills'])) {
             $skillIdsToAttach = array_merge($skillIdsToAttach, $cvData['selected_skills']);
         }
-        // <== تم إزالة منطق معالجة المهارات الجديدة من هنا
-        // if (!empty($cvData['new_skills'])) { ... }
+        // <== معالجة المهارة الجديدة إذا تم إدخالها
+        if (!empty($cvData['new_skill'])) {
+            $newSkill = Skill::firstOrCreate(['name' => $cvData['new_skill']]); // إنشاء المهارة إذا لم تكن موجودة
+            $skillIdsToAttach[] = $newSkill->id;
+        }
 
         if (!empty($skillIdsToAttach)) {
             $cv->skills()->syncWithoutDetaching(array_unique($skillIdsToAttach));
@@ -288,27 +337,5 @@ class EmployeeApplicationController extends Controller
         session()->forget('password');
 
         return view('applications.employee-form-completion', compact('username', 'password'));
-    }
-
-    // دالة مساعدة لترجمة أسماء الأدوار الإنجليزية إلى العربية للعرض
-    protected function translateRoleName(string $englishName): string
-    {
-        return [
-            'Manager' => 'مدير مشروع',
-            'Worker' => 'عامل',
-            'Workshop Supervisor' => 'مشرف ورشة',
-            'Reviewer' => 'مراجع',
-            'Architectural Engineer' => 'مهندس معماري',
-            'Civil Engineer' => 'مهندس مدني',
-            'Structural Engineer' => 'مهندس إنشائي',
-            'Electrical Engineer' => 'مهندس كهربائي',
-            'Mechanical Engineer' => 'مهندس ميكانيكي',
-            'Geotechnical Engineer' => 'مهندس جيوتقني',
-            'Quantity Surveyor' => 'مهندس كميات / تكاليف',
-            'Site Engineer' => 'مهندس موقع',
-            'Environmental Engineer' => 'مهندس بيئي',
-            'Surveying Engineer' => 'مهندس مساحة',
-            'Investor' => 'مستثمر',
-        ][$englishName] ?? $englishName;
     }
 }

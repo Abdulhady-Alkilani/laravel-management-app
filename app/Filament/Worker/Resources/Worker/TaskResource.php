@@ -87,11 +87,11 @@ class TaskResource extends Resource
                     ->label('تاريخ الانتهاء الفعلي')
                     ->visible(fn (Forms\Get $get) => $get('status') === 'مكتملة'),
                 Forms\Components\Placeholder::make('estimated_cost_info')
-                    ->content(fn (Task $record) => number_format($record->estimated_cost, 2) . ' SAR')
+                    ->content(fn (Task $record) => number_format($record->estimated_cost, 2) . ' SYP')
                     ->label('التكلفة التقديرية')
                     ->visible(fn (Task $record) => filled($record->estimated_cost)),
                 Forms\Components\Placeholder::make('actual_cost_info')
-                    ->content(fn (Task $record) => number_format($record->actual_cost, 2) . ' SAR')
+                    ->content(fn (Task $record) => number_format($record->actual_cost, 2) . ' SYP')
                     ->label('التكلفة الفعلية')
                     ->visible(fn (Task $record) => filled($record->actual_cost)),
             ]);

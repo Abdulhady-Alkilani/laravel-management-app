@@ -35,7 +35,7 @@ class InvestorsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('email')->label('البريد الإلكتروني')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('pivot.investment_amount')
                     ->label('مبلغ الاستثمار')
-                    ->money('SAR')
+                    ->money('SYP')
                     ->sortable(),
             ])
             ->filters([

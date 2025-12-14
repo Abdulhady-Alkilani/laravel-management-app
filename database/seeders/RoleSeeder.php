@@ -29,6 +29,8 @@ class RoleSeeder extends Seeder
             'Site Engineer',
             'Environmental Engineer',
             'Surveying Engineer',
+            'Information Technology Engineer', // <== دور جديد
+            'Telecommunications Engineer',
             'Service Proposer', // <== تأكد من وجود هذا الدور
         ];
 

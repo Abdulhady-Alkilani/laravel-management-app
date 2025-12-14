@@ -40,7 +40,7 @@ class ProjectInvestmentChart extends ChartWidget
             'labels' => $labels,
             'datasets' => [
                 [
-                    'label' => 'مبلغ الاستثمار (SAR)',
+                    'label' => 'مبلغ الاستثمار (SYP)',
                     'data' => $data,
                     'backgroundColor' => $backgroundColors,
                     'hoverOffset' => 4,

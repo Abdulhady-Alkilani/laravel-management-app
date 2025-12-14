@@ -27,7 +27,7 @@ class ManagerPanelProvider extends PanelProvider
             ->path('manager') // <== المسار الذي ستكون عليه اللوحة
             //->login() // لتمكين صفحة تسجيل الدخول لـ Filament (هذا سيتم استبداله بالصفحة المشتركة)
             // ->registration() // لا نحتاج تسجيل من هنا
-            ->brandLogo(asset('images/logo.png')) // شعارك
+            ->brandLogo(asset('images/logos.png')) // شعارك
             ->brandName('لوحة تحكم مدير المشروع') // اسم اللوحة
             ->colors([
                 'primary' => Color::Blue, // لون مميز لهذه اللوحة
@@ -47,6 +47,7 @@ class ManagerPanelProvider extends PanelProvider
                 \App\Filament\Manager\Widgets\OverdueTasksList::class,    // <== ويدجت قائمة المهام المتأخرة
             
             ])
+            ->favicon('images\logos.png')
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

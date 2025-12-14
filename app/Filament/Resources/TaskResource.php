@@ -94,6 +94,7 @@ class TaskResource extends Resource
                 Tables\Columns\TextColumn::make('description')
                     ->searchable()
                     ->limit(50)
+                    ->html()
                     ->label('الوصف'),
                 Tables\Columns\TextColumn::make('project.name')
                     ->label('المشروع')

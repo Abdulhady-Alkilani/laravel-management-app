@@ -31,7 +31,7 @@
             <label class="form-check-label" for="remember">تذكرني على هذا الجهاز</label>
         </div>
 
-        <button type="submit" class="btn btn-primary w-100 mb-3">دخول</button>
+        <button  type="submit" class="btn btn-primary w-100 mb-3">دخول</button>
         
         <div class="text-center">
             <a href="{{ route('register') }}" class="text-decoration-none">ليس لديك حساب؟ أنشئ حساباً جديداً</a>

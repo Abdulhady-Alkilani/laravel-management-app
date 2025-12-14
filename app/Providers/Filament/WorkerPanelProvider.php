@@ -28,7 +28,7 @@ class WorkerPanelProvider extends PanelProvider
             // ->login() // نستخدم صفحة تسجيل الدخول المشتركة
             //->defaultAclantLocale('ar')
             //->rtl()
-            ->brandLogo(asset('images/logo.png'))
+            ->brandLogo(asset('images/logos.png'))
            // ->brandLogo(asset('images/logo.png')->width(120))
             ->brandName('لوحة تحكم العامل')
             ->colors([
@@ -48,6 +48,7 @@ class WorkerPanelProvider extends PanelProvider
                 \App\Filament\Worker\Widgets\MyUrgentTasks::class,             // <== ويدجت المهام العاجلة
             
             ])
+            ->favicon('images\logos.png')
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

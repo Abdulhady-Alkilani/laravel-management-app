@@ -47,6 +47,7 @@ class SkillResource extends Resource
                 Tables\Columns\TextColumn::make('description')
                     ->searchable()
                     ->limit(70)
+                    ->html()
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->label('الوصف'),
                 Tables\Columns\TextColumn::make('cvs_count') // عدد السير الذاتية المرتبطة بالمهارة
