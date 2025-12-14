@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ServiceRequestResource\Pages;
-use App\Filament\Resources\ServiceRequestResource\RelationManagers;
 use App\Models\ServiceRequest;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -11,6 +10,9 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Forms\Components\RichEditor;
+use App\Models\User; // <== تأكد من استيراد User model
+use App\Models\Service; // <== تأكد من استيراد Service model
+use Illuminate\Database\Eloquent\Builder; // <== تأكد من استيراد Builder
 
 class ServiceRequestResource extends Resource
 {
@@ -37,7 +39,8 @@ class ServiceRequestResource extends Resource
                     ->searchable()
                     ->preload()
                     ->required()
-                    ->label('المستخدم مقدم الطلب'),
+                    ->label('المستخدم مقدم الطلب')
+                    ->disabledOn('edit'), // <== التعديل الرئيسي هنا: تعطيل الحقل عند التعديل
                 RichEditor::make('details')
                     ->required()
                     ->columnSpanFull()
@@ -68,12 +71,24 @@ class ServiceRequestResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('service.name')
-                    ->searchable()
-                    ->sortable()
-                    ->label('الخدمة'),
-                Tables\Columns\TextColumn::make('user.first_name')
+                    ->label('الخدمة')
+                    // <== استعلام بحث مخصص لـ service.name
+                    ->searchable(query: fn (Builder $query, string $search) => 
+                        $query->whereHas('service', fn (Builder $subQuery) => 
+                            $subQuery->where('name', 'like', "%{$search}%")
+                        )
+                    )
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('user.name') // <== استخدام user.name accessor
                     ->label('مقدم الطلب')
-                    ->searchable(['first_name', 'last_name'])
+                    // <== استعلام بحث مخصص لـ user.name
+                    ->searchable(query: fn (Builder $query, string $search) => 
+                        $query->whereHas('user', fn (Builder $subQuery) => 
+                            $subQuery->where('first_name', 'like', "%{$search}%")
+                                     ->orWhere('last_name', 'like', "%{$search}%")
+                                     ->orWhere('email', 'like', "%{$search}%")
+                        )
+                    )
                     ->sortable(),
                 Tables\Columns\TextColumn::make('details')
                     ->searchable()
@@ -87,6 +102,14 @@ class ServiceRequestResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->label('الحالة')
                     ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'قيد الانتظار' => 'warning',
+                        'تمت الموافقة' => 'success',
+                        'مرفوض' => 'danger',
+                        'قيد التنفيذ' => 'primary',
+                        'مكتمل' => 'info',
+                        default => 'secondary',
+                    })
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()

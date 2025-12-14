@@ -11,7 +11,8 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Database\Eloquent\SoftDeletingScope; // هذا الاستيراد قد لا يكون مستخدماً إذا لم يكن لديك soft deletes
+use App\Models\User; // <== تأكد من استيراد User model
 
 class CvResource extends Resource
 {
@@ -32,7 +33,8 @@ class CvResource extends Resource
                     ->searchable()
                     ->preload()
                     ->required()
-                    ->label('المستخدم'),
+                    ->label('المستخدم')
+                    ->disabledOn('edit'), // <== التعديل الرئيسي هنا: تعطيل الحقل عند التعديل
                 Forms\Components\Textarea::make('profile_details')
                     ->columnSpanFull()
                     ->nullable()
@@ -65,9 +67,16 @@ class CvResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('user.first_name')
+                Tables\Columns\TextColumn::make('user.name') // <== استخدام user.name accessor
                     ->label('صاحب السيرة')
-                    ->searchable(['first_name', 'last_name', 'email'])
+                    // <== التعديل الرئيسي هنا: استخدام استعلام مخصص للبحث
+                    ->searchable(query: fn (Builder $query, string $search) => 
+                        $query->whereHas('user', fn (Builder $subQuery) => 
+                            $subQuery->where('first_name', 'like', "%{$search}%")
+                                     ->orWhere('last_name', 'like', "%{$search}%")
+                                     ->orWhere('email', 'like', "%{$search}%")
+                        )
+                    )
                     ->sortable(),
                 Tables\Columns\TextColumn::make('experience')
                     ->label('الخبرة')
@@ -96,7 +105,13 @@ class CvResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('skills.name') // عرض المهارات المرتبطة
                     ->label('المهارات')
-                    ->badge(),
+                    ->badge()
+                    // <== إضافة searchable() مخصص هنا إذا كانت skills.name تسبب مشكلة
+                    ->searchable(query: fn (Builder $query, string $search) =>
+                        $query->whereHas('skills', fn (Builder $subQuery) =>
+                            $subQuery->where('name', 'like', "%{$search}%")
+                        )
+                    ),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -120,7 +135,7 @@ class CvResource extends Resource
     public static function getRelations(): array
     {
         return [
-            RelationManagers\SkillsRelationManager::class, // إضافة علاقة المهارات
+            RelationManagers\SkillsRelationManager::class,
         ];
     }
 

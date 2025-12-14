@@ -11,6 +11,8 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Forms\Components\RichEditor;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 
 class ProjectResource extends Resource
 {
@@ -63,8 +65,10 @@ class ProjectResource extends Resource
                     ->default('مخطط')
                     ->label('حالة المشروع'),
                 Forms\Components\Select::make('manager_user_id')
-                    ->relationship('manager', 'first_name') // 'manager' هي اسم العلاقة في Project model
-                    ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->first_name} {$record->last_name} ({$record->email})")
+                    ->relationship('manager', 'first_name', fn (Builder $query) => 
+                        $query->whereHas('roles', fn ($subQuery) => $subQuery->where('name', 'Manager'))
+                    )
+                    ->getOptionLabelFromRecordUsing(fn (User $record) => "{$record->first_name} {$record->last_name} ({$record->email})")
                     ->searchable()
                     ->preload()
                     ->required()
@@ -80,12 +84,18 @@ class ProjectResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->label('اسم المشروع'),
-                Tables\Columns\TextColumn::make('manager.first_name')
+                Tables\Columns\TextColumn::make('manager.name')
                     ->label('مدير المشروع')
-                    ->searchable(['first_name', 'last_name', 'email'])
+                    ->searchable(query: fn (Builder $query, string $search) => 
+                        $query->whereHas('manager', fn (Builder $subQuery) => 
+                            $subQuery->where('first_name', 'like', "%{$search}%")
+                                     ->orWhere('last_name', 'like', "%{$search}%")
+                                     ->orWhere('email', 'like', "%{$search}%")
+                        )
+                    )
                     ->sortable(),
                 Tables\Columns\TextColumn::make('budget')
-                    ->money('SY') // عرض كعملة
+                    ->money('SYP')
                     ->sortable()
                     ->label('الميزانية'),
                 Tables\Columns\TextColumn::make('status')

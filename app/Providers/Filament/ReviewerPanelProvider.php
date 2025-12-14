@@ -50,6 +50,7 @@ class ReviewerPanelProvider extends PanelProvider
             
             ])
             ->favicon('images\logos.png')
+            ->font('Poppins')
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

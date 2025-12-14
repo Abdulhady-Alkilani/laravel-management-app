@@ -77,12 +77,12 @@ class TaskResource extends Resource
                 Forms\Components\TextInput::make('estimated_cost')
                     ->numeric()
                     ->nullable()
-                    ->prefix('SR')
+                    ->prefix('SYP')
                     ->label('التكلفة التقديرية'),
                 Forms\Components\TextInput::make('actual_cost')
                     ->numeric()
                     ->nullable()
-                    ->prefix('SR')
+                    ->prefix('SYP')
                     ->label('التكلفة الفعلية'),
             ]);
     }

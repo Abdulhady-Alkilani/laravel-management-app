@@ -26,7 +26,7 @@ class InvestorsRelationManager extends RelationManager
                 Forms\Components\TextInput::make('investment_amount')
                     ->numeric()
                     ->required()
-                    ->prefix('SR')
+                    ->prefix('SYP')
                     ->label('مبلغ الاستثمار')
                     ->helperText('أدخل المبلغ الذي استثمره هذا المستخدم في هذا المشروع.'),
             ]);
@@ -81,7 +81,7 @@ class InvestorsRelationManager extends RelationManager
                         Forms\Components\TextInput::make('investment_amount')
                             ->numeric()
                             ->required()
-                            ->prefix('SR')
+                            ->prefix('SYP')
                             ->label('مبلغ الاستثمار'),
                     ]),
             ])

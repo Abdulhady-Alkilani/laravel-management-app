@@ -50,7 +50,7 @@ class ProjectResource extends Resource
                     ->disabled(),
                 Forms\Components\TextInput::make('budget')
                     ->numeric()
-                    ->prefix('SR')
+                    ->prefix('SYP')
                     ->label('الميزانية المخصصة')
                     ->disabled(),
                 Forms\Components\DatePicker::make('start_date')

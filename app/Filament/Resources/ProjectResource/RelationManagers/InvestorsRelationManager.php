@@ -7,11 +7,16 @@ use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
+use App\Models\User; // <== تأكد من استيراد User model
+use Illuminate\Database\Eloquent\Builder; // <== تأكد من استيراد Builder
 
 class InvestorsRelationManager extends RelationManager
 {
-    protected static string $relationship = 'investors'; // اسم العلاقة في Project model
+    protected static string $relationship = 'investors';
     protected static ?string $title = 'المستثمرون';
+    protected static ?string $pluralTitle = 'المستثمرون';
+    protected static ?string $modelLabel = 'مستثمر';
+    protected static ?string $pluralModelLabel = 'مستثمرون';
 
     public function form(Form $form): Form
     {
@@ -19,16 +24,17 @@ class InvestorsRelationManager extends RelationManager
             ->schema([
                 Forms\Components\TextInput::make('investment_amount')
                     ->numeric()
-                    ->nullable()
-                    ->prefix('SR')
-                    ->label('مبلغ الاستثمار'),
+                    ->required()
+                    ->prefix('SYP')
+                    ->label('مبلغ الاستثمار')
+                    ->helperText('أدخل المبلغ الذي استثمره هذا المستخدم في هذا المشروع.'),
             ]);
     }
 
     public function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('name')
+            ->recordTitleAttribute('name') // 'name' accessor في User model
             ->columns([
                 Tables\Columns\TextColumn::make('first_name')->label('الاسم الأول')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('last_name')->label('الاسم الأخير')->searchable()->sortable(),
@@ -43,14 +49,38 @@ class InvestorsRelationManager extends RelationManager
             ])
             ->headerActions([
                 Tables\Actions\AttachAction::make()
-                    ->preloadRecordSelect()
-                    ->searchable()
+                    // لم نعد بحاجة إلى preloadRecordSelect() إذا كنا نستخدم getSearchResultsUsing لتعبئة الخيارات
+                    // ->preloadRecordSelect() 
                     ->form(fn (Tables\Actions\AttachAction $action): array => [
-                        $action->getRecordSelect(),
+                        Forms\Components\Select::make('recordId') // <== اسم الحقل هنا هو 'recordId'
+                            ->label('اختر مستثمراً')
+                            ->helperText('اختر مستمرًا لربطه بالمشروع.')
+                            ->required()
+                            ->searchable() // <== تمكين البحث في قائمة الاختيار
+                            // <== التعديل الرئيسي هنا: استخدام getSearchResultsUsing لجلب المستخدمين كـ "مستثمر"
+                            ->getSearchResultsUsing(function (string $search): array {
+                                return User::query()
+                                    ->whereHas('roles', fn (Builder $subQuery) => $subQuery->where('name', 'Investor'))
+                                    // التأكد من أن المستخدم ليس مرتبطًا بالفعل بهذا المشروع
+                                    ->whereDoesntHave('projectInvestorLinks', fn(Builder $q) => $q->where('project_id', $this->getOwnerRecord()->id))
+                                    ->where(function (Builder $query) use ($search) {
+                                        $query->where('first_name', 'like', "%{$search}%")
+                                            ->orWhere('last_name', 'like', "%{$search}%")
+                                            ->orWhere('email', 'like', "%{$search}%");
+                                    })
+                                    ->limit(50) // حد أقصى للنتائج المعروضة
+                                    ->get()
+                                    ->mapWithKeys(fn (User $user) => [
+                                        $user->id => "{$user->first_name} {$user->last_name} ({$user->email})"
+                                    ])
+                                    ->toArray();
+                            })
+                            // <== استخدام getOptionLabelFromRecordUsing لضمان عرض الاسم الصحيح بعد الاختيار
+                            ->getOptionLabelFromRecordUsing(fn (User $record) => "{$record->first_name} {$record->last_name} ({$record->email})"),
                         Forms\Components\TextInput::make('investment_amount')
                             ->numeric()
-                            ->nullable()
-                            ->prefix('SR')
+                            ->required()
+                            ->prefix('SYP')
                             ->label('مبلغ الاستثمار'),
                     ]),
             ])

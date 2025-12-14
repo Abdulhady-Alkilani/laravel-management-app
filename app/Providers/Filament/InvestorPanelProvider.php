@@ -48,6 +48,7 @@ class InvestorPanelProvider extends PanelProvider
                 // سنضيف ويدجتات المستثمر المخصصة هنا لاحقاً
             ])
             ->favicon('images\logos.png')
+            ->font('Poppins')
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

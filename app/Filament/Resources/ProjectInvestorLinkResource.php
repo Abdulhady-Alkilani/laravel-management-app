@@ -10,6 +10,8 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use App\Models\User; // <== تأكد من استيراد User model
+use Illuminate\Database\Eloquent\Builder; // <== تأكد من استيراد Builder
 
 class ProjectInvestorLinkResource extends Resource
 {
@@ -31,7 +33,10 @@ class ProjectInvestorLinkResource extends Resource
                     ->required()
                     ->label('المشروع'),
                 Forms\Components\Select::make('investor_user_id')
-                    ->relationship('investor', 'first_name')
+                    // <== التعديل الرئيسي هنا: تصفية المستخدمين ليعرض المستثمرين فقط
+                    ->relationship('investor', 'first_name', fn (Builder $query) => 
+                        $query->whereHas('roles', fn ($subQuery) => $subQuery->where('name', 'Investor'))
+                    )
                     ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->first_name} {$record->last_name} ({$record->email})")
                     ->searchable()
                     ->preload()
@@ -40,7 +45,7 @@ class ProjectInvestorLinkResource extends Resource
                 Forms\Components\TextInput::make('investment_amount')
                     ->numeric()
                     ->nullable()
-                    ->prefix('SR')
+                    ->prefix('SYP')
                     ->label('مبلغ الاستثمار'),
             ]);
     }
@@ -50,13 +55,25 @@ class ProjectInvestorLinkResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('project.name')
-                    ->searchable()
-                    ->sortable()
-                    ->label('المشروع'),
-                Tables\Columns\TextColumn::make('investor.first_name')
-                    ->searchable(['first_name', 'last_name'])
-                    ->sortable()
-                    ->label('المستثمر'),
+                    ->label('المشروع')
+                    // <== استعلام بحث مخصص لـ project.name
+                    ->searchable(query: fn (Builder $query, string $search) => 
+                        $query->whereHas('project', fn (Builder $subQuery) => 
+                            $subQuery->where('name', 'like', "%{$search}%")
+                        )
+                    )
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('investor.name') // <== استخدام investor.name accessor
+                    ->label('المستثمر')
+                    // <== استعلام بحث مخصص لـ investor.name
+                    ->searchable(query: fn (Builder $query, string $search) => 
+                        $query->whereHas('investor', fn (Builder $subQuery) => 
+                            $subQuery->where('first_name', 'like', "%{$search}%")
+                                     ->orWhere('last_name', 'like', "%{$search}%")
+                                     ->orWhere('email', 'like', "%{$search}%")
+                        )
+                    )
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('investment_amount')
                     ->money('SYP')
                     ->sortable()

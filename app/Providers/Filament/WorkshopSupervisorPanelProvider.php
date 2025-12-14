@@ -48,6 +48,7 @@ class WorkshopSupervisorPanelProvider extends PanelProvider
                 // سنضيف ويدجتات مشرف الورشة المخصصة هنا لاحقاً
             ])
             ->favicon('images\logos.png')
+            ->font('Poppins')
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

@@ -100,13 +100,13 @@ class TasksRelationManager extends RelationManager
                 Forms\Components\TextInput::make('estimated_cost')
                     ->numeric()
                     ->nullable()
-                    ->prefix('SR')
+                    ->prefix('SYP')
                     ->label('التكلفة التقديرية')
                     ->helperText('التكلفة المتوقعة لإنجاز المهمة.'),
                 Forms\Components\TextInput::make('actual_cost')
                     ->numeric()
                     ->nullable()
-                    ->prefix('SR')
+                    ->prefix('SYP')
                     ->label('التكلفة الفعلية')
                     ->helperText('التكلفة الفعلية التي تم صرفها على المهمة.'),
             ]);
