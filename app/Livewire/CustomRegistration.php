@@ -178,4 +178,4 @@ class CustomRegistration extends Component
         return view('livewire.custom-registration', compact('translatedRoles'))->layout('components.layouts.guest-layout', ['title' => 'إنشاء حساب جديد']);
     }
 
-}
+} 

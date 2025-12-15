@@ -36,4 +36,4 @@ class SkillSeeder extends Seeder
         }
         $this->command->info('Skills seeded successfully!');
     }
-}
+} 

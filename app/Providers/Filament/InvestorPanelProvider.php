@@ -5,6 +5,7 @@ namespace App\Providers\Filament;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\MenuItem;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -33,6 +34,10 @@ class InvestorPanelProvider extends PanelProvider
             ->brandName('لوحة تحكم المستثمر')
             ->colors([
                 'primary' => Color::Indigo, // لون مميز
+            ])
+            ->sidebarCollapsibleOnDesktop()
+            ->userMenuItems([
+                'logout' => MenuItem::make()->label('تسجيل الخروج')
             ])
             ->discoverResources(in: app_path('Filament/Investor/Resources'), for: 'App\\Filament\\Investor\\Resources')
             ->discoverPages(in: app_path('Filament/Investor/Pages'), for: 'App\\Filament\\Investor\\Pages')

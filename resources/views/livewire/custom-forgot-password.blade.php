@@ -23,4 +23,4 @@
             <a href="{{ route('login') }}" class="text-decoration-none">العودة إلى تسجيل الدخول</a>
         </div>
     </form>
-</div>
+</div> 

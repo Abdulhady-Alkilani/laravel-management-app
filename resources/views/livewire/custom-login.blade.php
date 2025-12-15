@@ -40,4 +40,4 @@
             <a href="{{ route('password.request') }}" class="text-decoration-none">نسيت كلمة المرور؟</a>
         </div>
     </form>
-</div>
+</div> 

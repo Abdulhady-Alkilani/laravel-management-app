@@ -115,8 +115,8 @@ class NewServiceProposalResource extends Resource
                                      ->orWhere('last_name', 'like', "%{$search}%")
                                      ->orWhere('email', 'like', "%{$search}%")
                         )
-                    )
-                    ->sortable()
+                )
+                    // ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('review_comments')
                     ->label('التعليقات')

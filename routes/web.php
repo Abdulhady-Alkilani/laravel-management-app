@@ -98,4 +98,4 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/registration/completion', [\App\Http\Controllers\EmployeeApplicationController::class, 'completion'])->name('registration.completion');
     // تأكد من أن EmployeeApplicationController::completion لا تقوم بإعادة توجيه المستخدم إلى /login إذا كان مسجلاً للدخول.
     // يجب أن تعرض صفحة إكمال التسجيل للمستخدم المسجل للدخول.
-});
+}); 

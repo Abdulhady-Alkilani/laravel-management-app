@@ -72,4 +72,4 @@ class CustomResetPassword extends Component
     {
         return view('livewire.custom-reset-password')->layout('components.layouts.guest-layout', ['title' => 'إعادة تعيين كلمة المرور']);
     }
-}
+} 

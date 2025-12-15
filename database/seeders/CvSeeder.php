@@ -197,4 +197,4 @@ class CvSeeder extends Seeder
 
         $this->command->info('CVs seeded successfully and skills attached!');
     }
-}
+} 

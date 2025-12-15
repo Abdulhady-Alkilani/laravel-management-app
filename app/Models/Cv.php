@@ -31,4 +31,4 @@ class Cv extends Model
     {
         return $this->belongsToMany(Skill::class, 'cv_skill');
     }
-}
+} 

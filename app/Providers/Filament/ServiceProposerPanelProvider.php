@@ -5,6 +5,7 @@ namespace App\Providers\Filament;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\MenuItem;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -47,6 +48,10 @@ class ServiceProposerPanelProvider extends PanelProvider
                 \App\Filament\ServiceProposer\Widgets\LatestRequestsList::class,    // <== ويدجت الطلبات
                 \App\Filament\ServiceProposer\Widgets\LatestProposalsList::class,   // <== ويدجت المقترحات
             
+            ])
+            ->sidebarCollapsibleOnDesktop()
+            ->userMenuItems([
+                'logout' => MenuItem::make()->label('تسجيل الخروج')
             ])
             ->favicon('images\logos.png')
             ->font('Poppins')

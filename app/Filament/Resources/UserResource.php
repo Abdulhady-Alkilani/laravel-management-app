@@ -17,6 +17,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Hash; // لتشفير كلمة المرور
+use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction as TablesExportBulkAction;
 
 class UserResource extends Resource
 {
@@ -126,16 +127,16 @@ class UserResource extends Resource
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
-            ->headerActions([
-                ExportAction::make()->exporter(UserExporter::class)
-                ->formats([
-                    ExportFormat::Csv
-                ])
-            ])
+            // ->headerActions([
+            //     ExportAction::make()->exporter(UserExporter::class)
+            //     ->formats([
+            //         ExportFormat::Csv
+            //     ])
+            // ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                    ExportBulkAction::make()->exporter(UserExporter::class)
+                    \pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction::make()
                 ]),
             ]);
     }

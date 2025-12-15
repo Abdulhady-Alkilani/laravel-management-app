@@ -42,5 +42,5 @@ class CustomForgotPassword extends Component
     public function render()
     {
         return view('livewire.custom-forgot-password')->layout('components.layouts.guest-layout', ['title' => 'نسيت كلمة المرور']);
-    }
+    } 
 }

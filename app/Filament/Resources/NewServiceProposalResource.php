@@ -35,13 +35,15 @@ class NewServiceProposalResource extends Resource
                     ->columnSpanFull()
                     ->label('تفاصيل الخدمة المقترحة'),
                 Forms\Components\Select::make('user_id')
-                    ->relationship('proposer', 'first_name')
+                    ->relationship('proposer', 'first_name', fn (Builder $query) =>
+                        $query->whereHas('roles', fn ($subQuery) => $subQuery->where('name', 'Service Proposer')) // <== التعديل الرئيسي هنا: تصفية ليعرض مقدمي الخدمات فقط
+                    )
                     ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->first_name} {$record->last_name} ({$record->email})")
                     ->searchable()
                     ->preload()
                     ->required()
                     ->label('المستخدم المقترح')
-                    ->disabledOn('edit'), // <== التعديل الرئيسي هنا: تعطيل الحقل عند التعديل
+                    ->disabledOn('edit'), // تعطيل الحقل عند التعديل
                 Forms\Components\DatePicker::make('proposal_date')
                     ->required()
                     ->label('تاريخ تقديم الاقتراح'),
@@ -78,9 +80,8 @@ class NewServiceProposalResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->label('اسم الخدمة المقترحة'),
-                Tables\Columns\TextColumn::make('proposer.name') // <== استخدام proposer.name accessor
+                Tables\Columns\TextColumn::make('proposer.name')
                     ->label('المقترح')
-                    // <== التعديل الرئيسي هنا: استخدام استعلام مخصص للبحث
                     ->searchable(query: fn (Builder $query, string $search) => 
                         $query->whereHas('proposer', fn (Builder $subQuery) => 
                             $subQuery->where('first_name', 'like', "%{$search}%")
@@ -104,17 +105,16 @@ class NewServiceProposalResource extends Resource
                     })
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('reviewer.name') // <== استخدام reviewer.name accessor
+                Tables\Columns\TextColumn::make('reviewer.name')
                     ->label('المراجع')
-                    // <== التعديل الرئيسي هنا: استخدام استعلام مخصص للبحث
                     ->searchable(query: fn (Builder $query, string $search) => 
                         $query->whereHas('reviewer', fn (Builder $subQuery) => 
                             $subQuery->where('first_name', 'like', "%{$search}%")
                                      ->orWhere('last_name', 'like', "%{$search}%")
                                      ->orWhere('email', 'like', "%{$search}%")
                         )
-                    )
-                    ->sortable()
+                )
+                    // ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()

@@ -63,4 +63,4 @@
     {{-- @filamentScripts --}}
     @livewireScripts {{-- Livewire Scripts لا تزال ضرورية --}}
 </body>
-</html>
+</html> 

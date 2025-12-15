@@ -5,6 +5,7 @@ namespace App\Providers\Filament;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\MenuItem;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -47,6 +48,10 @@ class WorkerPanelProvider extends PanelProvider
                 \App\Filament\Worker\Widgets\WorkerTasksCalendarWidget::class, // <== ويدجت المهام المجدولة (قائمة)
                 \App\Filament\Worker\Widgets\MyUrgentTasks::class,             // <== ويدجت المهام العاجلة
             
+            ])
+            ->sidebarCollapsibleOnDesktop()
+            ->userMenuItems([
+                'logout' => MenuItem::make()->label('تسجيل الخروج')
             ])
             ->favicon('images\logos.png')
             ->font('Poppins')

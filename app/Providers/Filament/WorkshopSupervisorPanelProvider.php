@@ -5,6 +5,7 @@ namespace App\Providers\Filament;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\MenuItem;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -46,6 +47,10 @@ class WorkshopSupervisorPanelProvider extends PanelProvider
                 \App\Filament\WorkshopSupervisor\Widgets\WorkshopTasksOverview::class, // <== ويدجت المهام
                 \App\Filament\WorkshopSupervisor\Widgets\WorkerProductivityChart::class, // <== ويدجت الرسم البياني
                 // سنضيف ويدجتات مشرف الورشة المخصصة هنا لاحقاً
+            ])
+            ->sidebarCollapsibleOnDesktop()
+            ->userMenuItems([
+                'logout' => MenuItem::make()->label('تسجيل الخروج')
             ])
             ->favicon('images\logos.png')
             ->font('Poppins')

@@ -5,6 +5,7 @@ namespace App\Providers\Filament;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\MenuItem;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -46,6 +47,10 @@ class ManagerPanelProvider extends PanelProvider
                 \App\Filament\Manager\Widgets\ProjectProgressChart::class, // <== ويدجت الرسم البياني
                 \App\Filament\Manager\Widgets\OverdueTasksList::class,    // <== ويدجت قائمة المهام المتأخرة
             
+            ])
+            ->sidebarCollapsibleOnDesktop()
+            ->userMenuItems([
+                'logout' => MenuItem::make()->label('تسجيل الخروج')
             ])
             ->favicon('images\logos.png')
             ->font('Poppins')

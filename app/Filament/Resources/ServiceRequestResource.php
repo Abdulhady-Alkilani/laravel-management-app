@@ -34,13 +34,16 @@ class ServiceRequestResource extends Resource
                     ->required()
                     ->label('الخدمة المطلوبة'),
                 Forms\Components\Select::make('user_id')
-                    ->relationship('user', 'first_name')
+                    // <== التعديل الرئيسي هنا: تصفية المستخدمين ليعرض مقدمي الخدمات فقط
+                    ->relationship('user', 'first_name', fn (Builder $query) =>
+                        $query->whereHas('roles', fn ($subQuery) => $subQuery->where('name', 'Service Proposer'))
+                    )
                     ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->first_name} {$record->last_name} ({$record->email})")
                     ->searchable()
                     ->preload()
                     ->required()
                     ->label('المستخدم مقدم الطلب')
-                    ->disabledOn('edit'), // <== التعديل الرئيسي هنا: تعطيل الحقل عند التعديل
+                    ->disabledOn('edit'), // تعطيل الحقل عند التعديل
                 RichEditor::make('details')
                     ->required()
                     ->columnSpanFull()

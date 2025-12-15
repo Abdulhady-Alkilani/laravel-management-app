@@ -11,8 +11,8 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope; // هذا الاستيراد قد لا يكون مستخدماً إذا لم يكن لديك soft deletes
 use App\Models\User; // <== تأكد من استيراد User model
+use App\Models\Role; // <== تأكد من استيراد Role model
 
 class CvResource extends Resource
 {
@@ -25,16 +25,29 @@ class CvResource extends Resource
 
     public static function form(Form $form): Form
     {
+        $engineerAndWorkerRolesNames = [
+            'Worker',
+            'Architectural Engineer', 'Civil Engineer', 'Structural Engineer', 'Electrical Engineer',
+            'Mechanical Engineer', 'Geotechnical Engineer', 'Quantity Surveyor', 'Site Engineer',
+            'Environmental Engineer', 'Surveying Engineer', 'Information Technology Engineer', 'Telecommunications Engineer',
+        ];
+
         return $form
             ->schema([
                 Forms\Components\Select::make('user_id')
-                    ->relationship('user', 'first_name') // عرض الاسم الأول للمستخدم
+                    ->relationship('user', 'first_name', fn (Builder $query) =>
+                        $query->whereHas('roles', fn (Builder $roleQuery) =>
+                            $roleQuery->whereIn('name', $engineerAndWorkerRolesNames)
+                        )
+                        // يمكنك إضافة شرط إضافي هنا لضمان أن المستخدم ليس لديه CV بالفعل، إذا كنت لا تريد أكثر من CV لكل مستخدم
+                        ->whereDoesntHave('cvs') 
+                    )
                     ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->first_name} {$record->last_name} ({$record->email})")
                     ->searchable()
                     ->preload()
                     ->required()
                     ->label('المستخدم')
-                    ->disabledOn('edit'), // <== التعديل الرئيسي هنا: تعطيل الحقل عند التعديل
+                    ->disabledOn('edit'), // تعطيل الحقل عند التعديل
                 Forms\Components\Textarea::make('profile_details')
                     ->columnSpanFull()
                     ->nullable()
@@ -67,16 +80,15 @@ class CvResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('user.name') // <== استخدام user.name accessor
+                Tables\Columns\TextColumn::make('user.name')
                     ->label('صاحب السيرة')
-                    // <== التعديل الرئيسي هنا: استخدام استعلام مخصص للبحث
                     ->searchable(query: fn (Builder $query, string $search) => 
                         $query->whereHas('user', fn (Builder $subQuery) => 
                             $subQuery->where('first_name', 'like', "%{$search}%")
                                      ->orWhere('last_name', 'like', "%{$search}%")
                                      ->orWhere('email', 'like', "%{$search}%")
                         )
-            ),
+                    ),
                     // ->sortable(),
                 Tables\Columns\TextColumn::make('experience')
                     ->label('الخبرة')
@@ -103,10 +115,9 @@ class CvResource extends Resource
                     ->searchable()
                     ->limit(50)
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('skills.name') // عرض المهارات المرتبطة
+                Tables\Columns\TextColumn::make('skills.name')
                     ->label('المهارات')
                     ->badge()
-                    // <== إضافة searchable() مخصص هنا إذا كانت skills.name تسبب مشكلة
                     ->searchable(query: fn (Builder $query, string $search) =>
                         $query->whereHas('skills', fn (Builder $subQuery) =>
                             $subQuery->where('name', 'like', "%{$search}%")

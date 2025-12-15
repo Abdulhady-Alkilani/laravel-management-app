@@ -338,4 +338,4 @@ class EmployeeApplicationController extends Controller
 
         return view('applications.employee-form-completion', compact('username', 'password'));
     }
-}
+} 

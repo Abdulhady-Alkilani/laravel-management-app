@@ -39,4 +39,4 @@ class RoleSeeder extends Seeder
         }
         $this->command->info('Roles seeded successfully!');
     }
-}
+} 

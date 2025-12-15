@@ -93,4 +93,4 @@ class CustomLogin extends Component
     {
         return view('livewire.custom-login')->layout('components.layouts.guest-layout', ['title' => 'تسجيل الدخول']);
     }
-}
+} 

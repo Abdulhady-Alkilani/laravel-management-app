@@ -11,8 +11,8 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Forms\Components\RichEditor;
-use App\Models\User;
-use Illuminate\Database\Eloquent\Builder;
+use App\Models\User; // <== تأكد من استيراد User model
+use Illuminate\Database\Eloquent\Builder; // <== تأكد من استيراد Builder
 
 class ProjectResource extends Resource
 {
@@ -43,7 +43,7 @@ class ProjectResource extends Resource
                 Forms\Components\TextInput::make('budget')
                     ->numeric()
                     ->required()
-                    ->prefix('SR')
+                    ->prefix('SYP')
                     ->label('الميزانية المخصصة'),
                 Forms\Components\DatePicker::make('start_date')
                     ->required()
@@ -65,6 +65,7 @@ class ProjectResource extends Resource
                     ->default('مخطط')
                     ->label('حالة المشروع'),
                 Forms\Components\Select::make('manager_user_id')
+                    // <== هذا الجزء هو الذي يضمن عرض مديري المشاريع فقط
                     ->relationship('manager', 'first_name', fn (Builder $query) => 
                         $query->whereHas('roles', fn ($subQuery) => $subQuery->where('name', 'Manager'))
                     )
@@ -86,6 +87,7 @@ class ProjectResource extends Resource
                     ->label('اسم المشروع'),
                 Tables\Columns\TextColumn::make('manager.name')
                     ->label('مدير المشروع')
+                    // <== استعلام بحث مخصص لمدير المشروع
                     ->searchable(query: fn (Builder $query, string $search) => 
                         $query->whereHas('manager', fn (Builder $subQuery) => 
                             $subQuery->where('first_name', 'like', "%{$search}%")
