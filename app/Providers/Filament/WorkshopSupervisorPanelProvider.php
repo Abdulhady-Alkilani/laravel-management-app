@@ -29,6 +29,7 @@ class WorkshopSupervisorPanelProvider extends PanelProvider
             // ->login() // نستخدم صفحة تسجيل الدخول المشتركة
             //->defaultAclantLocale('ar')
             //->rtl()
+            ->spa()
             ->brandLogo(asset('images/logos.png'))
             //->brandLogo(asset('images/logo.png')->width(120))
             ->brandName('لوحة تحكم مشرف الورشة')

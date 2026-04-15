@@ -13,7 +13,9 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Filament\Tables\Actions\Action;
-use App\Models\User; // تأكد من استيراد User model
+use App\Models\User;
+use App\Services\AiCvScoringService;
+use Filament\Notifications\Notification;
 
 class CvResource extends Resource
 {
@@ -54,6 +56,16 @@ class CvResource extends Resource
                     ->columnSpanFull()
                     ->label('المؤهلات العلمية')
                     ->disabled(),
+                Forms\Components\FileUpload::make('cv_file_path')
+                    ->label('ملف السيرة الذاتية')
+                    ->disk('public')
+                    ->directory('cvs')
+                    ->openable()
+                    ->downloadable()
+                    ->previewable()
+                    ->columnSpanFull()
+                    ->disabled()
+                    ->helperText('ملف السيرة الذاتية المرفق (للعرض والتنزيل فقط)'),
                 Forms\Components\Select::make('skills_list')
                     ->multiple()
                     ->relationship('skills', 'name')
@@ -98,6 +110,23 @@ class CvResource extends Resource
                     ->label('التعليم')
                     ->limit(50)
                     ->searchable(),
+                Tables\Columns\IconColumn::make('cv_file_path')
+                    ->label('ملف CV')
+                    ->icon(fn ($state) => $state ? 'heroicon-o-document-arrow-down' : 'heroicon-o-x-mark')
+                    ->color(fn ($state) => $state ? 'success' : 'gray')
+                    ->tooltip(fn ($state) => $state ? 'انقر لعرض الملف' : 'لا يوجد ملف')
+                    ->action(fn (Cv $record) => $record->cv_file_path ? response()->download(storage_path('app/public/' . $record->cv_file_path)) : null),
+                Tables\Columns\TextColumn::make('ai_score')
+                    ->label('تقييم AI')
+                    ->badge()
+                    ->color(fn ($state) => match (true) {
+                        $state === null => 'gray',
+                        $state >= 80 => 'success',
+                        $state >= 50 => 'warning',
+                        default => 'danger',
+                    })
+                    ->formatStateUsing(fn ($state) => $state !== null ? "{$state}/100" : 'غير مقيّم')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('cv_status')
                     ->label('الحالة')
                     ->badge()
@@ -130,9 +159,32 @@ class CvResource extends Resource
                         'تمت الموافقة' => 'تمت الموافقة',
                         'مرفوض' => 'مرفوض',
                     ])
+                    ->default('قيد الانتظار')
                     ->label('حالة السيرة الذاتية'),
             ])
             ->actions([
+                Action::make('ai_analyze')
+                    ->label('تحليل بالذكاء الاصطناعي')
+                    ->icon('heroicon-o-cpu-chip')
+                    ->color('info')
+                    ->requiresConfirmation()
+                    ->action(function (Cv $record) {
+                        $service = new AiCvScoringService();
+                        $cvData = [
+                            'skills' => $record->skills->pluck('name')->implode(', '),
+                            'experience' => $record->experience,
+                            'education' => $record->education,
+                            'profile_details' => $record->profile_details,
+                            'cv_file_path' => $record->cv_file_path,
+                        ];
+                        $score = $service->scoreCv($cvData);
+                        if ($score !== null) {
+                            $record->update(['ai_score' => $score]);
+                            Notification::make()->title('تم التقييم بنجاح')->body("الدرجة: {$score}/100")->success()->send();
+                        } else {
+                            Notification::make()->title('فشل التقييم')->body('تأكد من إعداد API Key أو أنك لم تتجاوز حد الاستخدام لخدمة الذكاء الاصطناعي (Quota).')->danger()->send();
+                        }
+                    }),
                 Action::make('approve')
                     ->label('موافقة')
                     ->color('success')
@@ -172,7 +224,8 @@ class CvResource extends Resource
             ])
             ->bulkActions([
                 //
-            ]);
+            ])
+            ->defaultSort('ai_score', 'desc');
     }
 
     public static function getRelations(): array

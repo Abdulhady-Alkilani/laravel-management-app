@@ -28,6 +28,7 @@ class ManagerPanelProvider extends PanelProvider
             ->path('manager') // <== المسار الذي ستكون عليه اللوحة
             //->login() // لتمكين صفحة تسجيل الدخول لـ Filament (هذا سيتم استبداله بالصفحة المشتركة)
             // ->registration() // لا نحتاج تسجيل من هنا
+            ->spa()
             ->brandLogo(asset('images/logos.png')) // شعارك
             ->brandName('لوحة تحكم مدير المشروع') // اسم اللوحة
             ->colors([

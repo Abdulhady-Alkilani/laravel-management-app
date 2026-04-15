@@ -49,6 +49,17 @@ class CvResource extends Resource
                     ->columnSpanFull()
                     ->required()
                     ->label('المؤهلات العلمية'),
+                Forms\Components\FileUpload::make('cv_file_path')
+                    ->label('ملف السيرة الذاتية')
+                    ->disk('public')
+                    ->directory('cvs')
+                    ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
+                    ->maxSize(5120)
+                    ->openable()
+                    ->downloadable()
+                    ->previewable()
+                    ->columnSpanFull()
+                    ->helperText('ارفع سيرتك الذاتية (PDF, JPG, PNG — الحد الأقصى: 5 ميجابايت)'),
                 Forms\Components\Placeholder::make('cv_status_info')
                     ->content(fn (Cv $record) => $record->cv_status)
                     ->label('حالة السيرة الذاتية'),
@@ -71,6 +82,12 @@ class CvResource extends Resource
                 Tables\Columns\TextColumn::make('education')
                     ->label('التعليم')
                     ->limit(50),
+                Tables\Columns\IconColumn::make('cv_file_path')
+                    ->label('ملف CV')
+                    ->icon(fn ($state) => $state ? 'heroicon-o-document-arrow-down' : 'heroicon-o-x-mark')
+                    ->color(fn ($state) => $state ? 'success' : 'gray')
+                    ->tooltip(fn ($state) => $state ? 'انقر لعرض الملف' : 'لا يوجد ملف')
+                    ->action(fn (Cv $record) => $record->cv_file_path ? response()->download(storage_path('app/public/' . $record->cv_file_path)) : null),
                 Tables\Columns\TextColumn::make('cv_status')
                     ->label('الحالة')
                     ->badge()

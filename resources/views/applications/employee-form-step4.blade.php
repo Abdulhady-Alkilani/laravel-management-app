@@ -37,7 +37,7 @@
             </div>
         @endif
 
-        <form action="{{ route('employee.apply.store.step4') }}" method="POST">
+        <form action="{{ route('employee.apply.store.step4') }}" method="POST" enctype="multipart/form-data">
             @csrf
 
             <fieldset class="mb-4 p-3 border rounded">
@@ -74,6 +74,21 @@
                     <textarea class="form-control @error('education') is-invalid @enderror" id="education" name="education" rows="5" placeholder="اذكر شهاداتك الأكاديمية (بكالوريوس، دبلوم، ثانوية)، والمؤسسة التعليمية، وسنة التخرج. بالإضافة إلى أي دورات تدريبية متخصصة أو شهادات مهنية حصلت عليها.">{{ old('education', $applicationData['step4']['education'] ?? '') }}</textarea>
                     <div class="form-text">مثال: بكالوريوس هندسة مدنية - جامعة دمشق 2019، دورة سلامة مهنية OSHA 2021.</div>
                     @error('education') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+            </fieldset>
+
+            <fieldset class="mb-4 p-3 border rounded">
+                <legend class="float-none w-auto px-2 fs-5"><i class="bi bi-file-earmark-arrow-up"></i> ملف السيرة الذاتية</legend>
+
+                <div class="mb-3">
+                    <label for="cv_file" class="form-label">ارفع سيرتك الذاتية (PDF أو صورة)</label>
+                    <input type="file" class="form-control @error('cv_file') is-invalid @enderror" id="cv_file" name="cv_file" accept=".pdf,.jpg,.jpeg,.png">
+                    <div class="form-text">
+                        <i class="bi bi-info-circle"></i>
+                        الأنواع المسموحة: PDF, JPG, JPEG, PNG — الحد الأقصى للحجم: 5 ميجابايت.
+                        <br>يُفضل رفع السيرة الذاتية بصيغة PDF لضمان التوافق مع أنظمة ATS.
+                    </div>
+                    @error('cv_file') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
             </fieldset>
 

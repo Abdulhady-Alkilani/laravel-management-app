@@ -245,11 +245,14 @@ class EmployeeApplicationController extends Controller
             'selected_skills.*' => ['exists:skills,id'],
             'new_skill' => ['nullable', 'string', 'max:255', 'unique:skills,name'], // <== حقل المهارة الجديدة
             'education' => ['required', 'string', 'max:1000'],
+            'cv_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'], // <== ملف السيرة الذاتية (5MB كحد أقصى)
             // 'experience' تم إزالته من هنا لأنه تم استبداله بـ years_of_experience_summary
         ], [
             // 'experience.required' => 'الخبرة مطلوبة لإكمال السيرة الذاتية.',
             'education.required' => 'المؤهلات العلمية مطلوبة لإكمال السيرة الذاتية.',
             'new_skill.unique' => 'هذه المهارة موجودة بالفعل، يرجى اختيارها من القائمة أو إضافة مهارة فريدة.',
+            'cv_file.mimes' => 'يجب أن يكون ملف السيرة الذاتية من نوع: PDF, JPG, JPEG, أو PNG.',
+            'cv_file.max' => 'يجب ألا يتجاوز حجم ملف السيرة الذاتية 5 ميجابايت.',
         ]);
 
         $request->session()->put('employee_application.step4', $request->only([
@@ -286,11 +289,18 @@ class EmployeeApplicationController extends Controller
              \Log::warning("Selected role ID {$step1Data['role_id']} not found for new employee application user.");
         }
 
+        // <== معالجة رفع ملف السيرة الذاتية
+        $cvFilePath = null;
+        if ($request->hasFile('cv_file')) {
+            $cvFilePath = $request->file('cv_file')->store('cvs', 'public');
+        }
+
         $cv = Cv::create([
             'user_id' => $user->id,
             'profile_details' => $step3Data['profile_details'] ?? null,
             'experience' => $step3Data['years_of_experience_summary'] ?? null, // <== حفظ سنوات الخبرة هنا
             'education' => $cvData['education'] ?? null,
+            'cv_file_path' => $cvFilePath, // <== حفظ مسار ملف السيرة الذاتية
             'cv_status' => 'قيد الانتظار',
             'rejection_reason' => null,
         ]);

@@ -15,6 +15,8 @@ class Cv extends Model
         // 'skills', // قم بإزالة هذا السطر من هنا أيضاً
         'experience',
         'education',
+        'cv_file_path', // مسار ملف السيرة الذاتية
+        'ai_score', // تقييم الذكاء الاصطناعي
         'cv_status',
         'rejection_reason',
     ];

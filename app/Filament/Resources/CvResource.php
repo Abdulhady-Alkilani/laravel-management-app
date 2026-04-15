@@ -10,9 +10,13 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Tables\Actions\Action;
 use Illuminate\Database\Eloquent\Builder;
-use App\Models\User; // <== تأكد من استيراد User model
-use App\Models\Role; // <== تأكد من استيراد Role model
+use Illuminate\Database\Eloquent\Collection;
+use App\Models\User;
+use App\Models\Role;
+use App\Services\AiCvScoringService;
+use Filament\Notifications\Notification;
 
 class CvResource extends Resource
 {
@@ -60,6 +64,17 @@ class CvResource extends Resource
                     ->columnSpanFull()
                     ->nullable()
                     ->label('المؤهلات العلمية'),
+                Forms\Components\FileUpload::make('cv_file_path')
+                    ->label('ملف السيرة الذاتية')
+                    ->disk('public')
+                    ->directory('cvs')
+                    ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
+                    ->maxSize(5120) // 5MB
+                    ->openable()
+                    ->downloadable()
+                    ->previewable()
+                    ->columnSpanFull()
+                    ->helperText('الأنواع المسموحة: PDF, JPG, PNG — الحد الأقصى: 5 ميجابايت'),
                 Forms\Components\Select::make('cv_status')
                     ->options([
                         'تحتاج تأكيد' => 'تحتاج تأكيد',
@@ -98,6 +113,23 @@ class CvResource extends Resource
                     ->label('التعليم')
                     ->searchable()
                     ->limit(50),
+                Tables\Columns\IconColumn::make('cv_file_path')
+                    ->label('ملف CV')
+                    ->icon(fn ($state) => $state ? 'heroicon-o-document-arrow-down' : 'heroicon-o-x-mark')
+                    ->color(fn ($state) => $state ? 'success' : 'gray')
+                    ->tooltip(fn ($state) => $state ? 'انقر لعرض الملف' : 'لا يوجد ملف')
+                    ->action(fn (Cv $record) => $record->cv_file_path ? response()->download(storage_path('app/public/' . $record->cv_file_path)) : null),
+                Tables\Columns\TextColumn::make('ai_score')
+                    ->label('تقييم AI')
+                    ->badge()
+                    ->color(fn ($state) => match (true) {
+                        $state === null => 'gray',
+                        $state >= 80 => 'success',
+                        $state >= 50 => 'warning',
+                        default => 'danger',
+                    })
+                    ->formatStateUsing(fn ($state) => $state !== null ? "{$state}/100" : 'غير مقيّم')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('cv_status')
                     ->label('الحالة')
                     ->badge()
@@ -130,17 +162,89 @@ class CvResource extends Resource
                     ->label('تاريخ الإنشاء'),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('cv_status')
+                    ->options([
+                        'تحتاج تأكيد' => 'تحتاج تأكيد',
+                        'تمت الموافقة' => 'تمت الموافقة',
+                        'قيد الانتظار' => 'قيد الانتظار',
+                        'مرفوض' => 'مرفوض',
+                    ])
+                    ->default('قيد الانتظار')
+                    ->label('حالة السيرة الذاتية'),
             ])
             ->actions([
+                Action::make('ai_analyze')
+                    ->label('تحليل بالذكاء الاصطناعي')
+                    ->icon('heroicon-o-cpu-chip')
+                    ->color('info')
+                    ->requiresConfirmation()
+                    ->modalHeading('تحليل السيرة الذاتية بالذكاء الاصطناعي')
+                    ->modalDescription('سيتم إرسال بيانات هذه السيرة الذاتية إلى خدمة الذكاء الاصطناعي لتقييمها. هل تريد المتابعة؟')
+                    ->action(function (Cv $record) {
+                        $service = new AiCvScoringService();
+                        $cvData = [
+                            'skills' => $record->skills->pluck('name')->implode(', '),
+                            'experience' => $record->experience,
+                            'education' => $record->education,
+                            'profile_details' => $record->profile_details,
+                            'cv_file_path' => $record->cv_file_path,
+                        ];
+                        $score = $service->scoreCv($cvData);
+                        if ($score !== null) {
+                            $record->update(['ai_score' => $score]);
+                            Notification::make()
+                                ->title('تم التقييم بنجاح')
+                                ->body("حصلت السيرة الذاتية على درجة: {$score}/100")
+                                ->success()
+                                ->send();
+                        } else {
+                            Notification::make()
+                                ->title('فشل التقييم')
+                                ->body('تأكد من إعداد API Key أو أنك لم تتجاوز حد الاستخدام لخدمة الذكاء الاصطناعي (Quota).')
+                                ->danger()
+                                ->send();
+                        }
+                    }),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('ai_analyze_batch')
+                        ->label('تحليل جماعي بالذكاء الاصطناعي')
+                        ->icon('heroicon-o-cpu-chip')
+                        ->color('info')
+                        ->requiresConfirmation()
+                        ->modalHeading('تحليل جماعي بالذكاء الاصطناعي')
+                        ->modalDescription('سيتم تحليل جميع السير الذاتية المحددة. قد تستغرق العملية بعض الوقت.')
+                        ->action(function (Collection $records) {
+                            $service = new AiCvScoringService();
+                            $successCount = 0;
+                            foreach ($records as $record) {
+                                $cvData = [
+                                    'skills' => $record->skills->pluck('name')->implode(', '),
+                                    'experience' => $record->experience,
+                                    'education' => $record->education,
+                                    'profile_details' => $record->profile_details,
+                                    'cv_file_path' => $record->cv_file_path,
+                                ];
+                                $score = $service->scoreCv($cvData);
+                                if ($score !== null) {
+                                    $record->update(['ai_score' => $score]);
+                                    $successCount++;
+                                }
+                            }
+                            Notification::make()
+                                ->title('اكتمل التحليل الجماعي')
+                                ->body("تم تقييم {$successCount} من {$records->count()} سيرة ذاتية بنجاح.")
+                                ->success()
+                                ->send();
+                        })
+                        ->deselectRecordsAfterCompletion(),
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->defaultSort('ai_score', 'desc');
     }
 
     public static function getRelations(): array
