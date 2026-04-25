@@ -55,16 +55,7 @@ class WorkerController extends Controller
         ]);
 
         $user = Auth::user();
-        $cv = Cv::where('user_id', $user->id)->first();
-
-        if (!$cv) {
-            return response()->json([
-                'success' => false,
-                'message' => 'لا توجد سيرة ذاتية لتعديلها.',
-                'data' => null,
-                'status_code' => 404,
-            ], 404);
-        }
+        $cv = Cv::firstOrCreate(['user_id' => $user->id]);
 
         $data = $request->only(['profile_details', 'experience', 'education']);
 
@@ -93,25 +84,23 @@ class WorkerController extends Controller
     {
         $request->validate([
             'skills' => ['required', 'array', 'min:1'],
-            'skills.*' => ['required', 'string', 'max:255'],
+            'skills.*' => ['required'], // يقبل نصوص (أسماء) أو أرقام (IDs)
         ]);
 
         $user = Auth::user();
-        $cv = Cv::where('user_id', $user->id)->first();
-
-        if (!$cv) {
-            return response()->json([
-                'success' => false,
-                'message' => 'لا توجد سيرة ذاتية لإضافة مهارات إليها.',
-                'data' => null,
-                'status_code' => 404,
-            ], 404);
-        }
+        $cv = Cv::firstOrCreate(['user_id' => $user->id]);
 
         $skillIds = [];
-        foreach ($request->skills as $skillName) {
-            $skill = Skill::firstOrCreate(['name' => trim($skillName)]);
-            $skillIds[] = $skill->id;
+        foreach ($request->skills as $skillData) {
+            if (is_numeric($skillData)) {
+                $skill = Skill::find($skillData);
+                if ($skill) {
+                    $skillIds[] = $skill->id;
+                }
+            } else {
+                $skill = Skill::firstOrCreate(['name' => trim($skillData)]);
+                $skillIds[] = $skill->id;
+            }
         }
 
         $cv->skills()->syncWithoutDetaching($skillIds);
@@ -215,6 +204,27 @@ class WorkerController extends Controller
             'progress' => ['nullable', 'integer', 'min:0', 'max:100'],
             'status' => ['nullable', 'string', 'in:قيد التنفيذ,مكتملة,معلقة,ملغاة'],
         ]);
+
+        $progress = $request->input('progress', $task->progress);
+        $status = $request->input('status', $task->status);
+
+        if ($status === 'مكتملة' && $progress != 100) {
+            return response()->json([
+                'success' => false,
+                'message' => 'لا يمكن وضع حالة المهمة كمكتملة ونسبة الإنجاز أقل من 100%',
+                'data' => null,
+                'status_code' => 422,
+            ], 422);
+        }
+
+        if ($progress == 100 && $status !== 'مكتملة') {
+            return response()->json([
+                'success' => false,
+                'message' => 'عندما تكون نسبة الإنجاز 100% يجب أن تكون الحالة مكتملة',
+                'data' => null,
+                'status_code' => 422,
+            ], 422);
+        }
 
         $task->update($request->only(['progress', 'status']));
 

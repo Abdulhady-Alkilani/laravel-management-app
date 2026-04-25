@@ -32,6 +32,24 @@ class AuthController extends Controller
             ]);
         }
 
+        // التحقق من أن المستخدم عامل أو مهندس فقط
+        $engineerRoles = [
+            'Architectural Engineer', 'Civil Engineer', 'Structural Engineer', 'Electrical Engineer',
+            'Mechanical Engineer', 'Geotechnical Engineer', 'Quantity Surveyor', 'Site Engineer',
+            'Environmental Engineer', 'Surveying Engineer', 'Information Technology Engineer',
+            'Telecommunications Engineer',
+        ];
+
+        $allowedRoles = $user->roles->filter(function ($role) use ($engineerRoles) {
+            return $role->name === 'Worker' || in_array($role->name, $engineerRoles);
+        });
+
+        if ($allowedRoles->isEmpty()) {
+            throw ValidationException::withMessages([
+                'username' => ['هذا الحساب غير مصرح له بالدخول عبر تطبيق الجوال.'],
+            ]);
+        }
+
         // حذف التوكنات السابقة (اختياري - لتسجيل دخول جلسة واحدة)
         // $user->tokens()->delete();
 

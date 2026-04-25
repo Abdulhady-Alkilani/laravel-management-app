@@ -5,6 +5,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\EngineerController;
 use App\Http\Controllers\Api\V1\WorkerController;
+use App\Http\Controllers\Api\V1\SkillController;
+use App\Http\Middleware\CheckEngineerRole;
+use App\Http\Middleware\CheckWorkerRole;
 
 /*
 |--------------------------------------------------------------------------
@@ -44,8 +47,11 @@ Route::prefix('v1')->group(function () {
             ]);
         });
 
+        // ==================== المهارات (عام لجميع المستخدمين المسجلين) ====================
+        Route::get('/skills', [SkillController::class, 'index']);
+
         // ==================== صلاحيات المهندس ====================
-        Route::prefix('engineer')->group(function () {
+        Route::prefix('engineer')->middleware(CheckEngineerRole::class)->group(function () {
             // السيرة الذاتية
             Route::get('/cv', [EngineerController::class, 'getCv']);
             Route::put('/cv', [EngineerController::class, 'updateCv']);
@@ -69,7 +75,7 @@ Route::prefix('v1')->group(function () {
         });
 
         // ==================== صلاحيات العامل ====================
-        Route::prefix('worker')->group(function () {
+        Route::prefix('worker')->middleware(CheckWorkerRole::class)->group(function () {
             // السيرة الذاتية
             Route::get('/cv', [WorkerController::class, 'getCv']);
             Route::put('/cv', [WorkerController::class, 'updateCv']);
